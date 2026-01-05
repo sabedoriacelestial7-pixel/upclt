@@ -7,7 +7,8 @@ import {
   Clock, 
   Wallet, 
   Calendar,
-  User
+  User,
+  ArrowRight
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { BottomNav } from '@/components/BottomNav';
@@ -32,7 +33,7 @@ export default function HomePage() {
     <div className="min-h-screen min-h-[100dvh] gradient-primary pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-primary/95 backdrop-blur-lg border-b border-border pt-[env(safe-area-inset-top)]">
-        <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-md mx-auto px-5 h-14 flex items-center justify-between">
           <Logo size="md" />
           <button 
             onClick={() => navigate('/perfil')}
@@ -43,12 +44,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-5 space-y-5 animate-fade-in">
+      <main className="max-w-md mx-auto px-5 py-5 space-y-4 animate-fade-in">
         {/* Hero */}
         <div className="text-center py-3">
-          <div className="w-14 h-14 rounded-2xl gradient-card mx-auto mb-3 flex items-center justify-center shadow-button">
-            <Search size={28} className="text-white" />
-          </div>
           <h1 className="text-xl font-bold text-foreground mb-1">
             Olá, {firstName}!
           </h1>
@@ -57,43 +55,49 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Main CTA Card */}
+        {/* Main CTA Card - Premium Green Gradient */}
         <button
           onClick={() => navigate('/consulta')}
           className={cn(
-            'w-full bg-card rounded-2xl p-5 shadow-card text-left',
-            'transition-all duration-200 hover:shadow-card-hover active:scale-[0.98]',
-            'touch-manipulation group'
+            'w-full rounded-2xl p-5 text-left',
+            'bg-gradient-to-r from-[#22c55e] to-[#16a34a]',
+            'shadow-lg shadow-green-500/25',
+            'transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-green-500/30',
+            'active:scale-[0.98] touch-manipulation group'
           )}
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors shrink-0">
-              <Search size={24} className="text-secondary" />
+            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0 backdrop-blur-sm">
+              <Search size={24} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-bold text-card-foreground">
+              <h2 className="text-base font-bold text-white">
                 Consultar Minha Margem
               </h2>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-white/80 text-sm">
                 Descubra quanto você pode contratar
               </p>
             </div>
+            <ArrowRight size={22} className="text-white/90 group-hover:translate-x-1 transition-transform duration-300" />
           </div>
         </button>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Quick Actions - Glass Effect */}
+        <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => navigate('/simulador')}
             className={cn(
-              'bg-card rounded-2xl p-4 shadow-card text-left',
-              'transition-all duration-200 hover:shadow-card-hover active:scale-[0.98]',
-              'touch-manipulation'
+              'rounded-xl p-4 text-left',
+              'bg-white/5 border border-[#22c55e]/50',
+              'transition-all duration-300 hover:border-[#22c55e] hover:bg-white/10',
+              'active:scale-[0.98] touch-manipulation group'
             )}
           >
-            <Calculator size={24} className="text-secondary mb-2" />
-            <h3 className="font-semibold text-card-foreground text-sm">Simulador</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <div className="w-10 h-10 rounded-lg bg-[#22c55e]/10 flex items-center justify-center mb-3 group-hover:bg-[#22c55e]/20 transition-colors">
+              <Calculator size={22} className="text-[#22c55e]" />
+            </div>
+            <h3 className="font-semibold text-white text-sm">Simulador</h3>
+            <p className="text-xs text-white/60 mt-0.5">
               Calcule suas parcelas
             </p>
           </button>
@@ -101,34 +105,37 @@ export default function HomePage() {
           <button
             onClick={abrirWhatsAppSimples}
             className={cn(
-              'bg-card rounded-2xl p-4 shadow-card text-left',
-              'transition-all duration-200 hover:shadow-card-hover active:scale-[0.98]',
-              'touch-manipulation'
+              'rounded-xl p-4 text-left',
+              'bg-white/5 border border-[#22c55e]/50',
+              'transition-all duration-300 hover:border-[#22c55e] hover:bg-white/10',
+              'active:scale-[0.98] touch-manipulation group'
             )}
           >
-            <MessageCircle size={24} className="text-whatsapp mb-2" />
-            <h3 className="font-semibold text-card-foreground text-sm">WhatsApp</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <div className="w-10 h-10 rounded-lg bg-[#22c55e]/10 flex items-center justify-center mb-3 group-hover:bg-[#22c55e]/20 transition-colors">
+              <MessageCircle size={22} className="text-[#22c55e]" />
+            </div>
+            <h3 className="font-semibold text-white text-sm">WhatsApp</h3>
+            <p className="text-xs text-white/60 mt-0.5">
               Fale com consultor
             </p>
           </button>
         </div>
 
         {/* Benefits Section */}
-        <section>
+        <section className="pt-2">
           <h2 className="text-base font-bold text-foreground mb-3">
             Vantagens UpCLT
           </h2>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {beneficios.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="bg-muted/30 rounded-xl p-3 flex items-center gap-2.5"
+                className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center gap-2.5 transition-all duration-300 hover:bg-white/10"
               >
-                <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
-                  <Icon size={18} className="text-secondary" />
+                <div className="w-9 h-9 rounded-lg bg-[#22c55e]/10 flex items-center justify-center shrink-0">
+                  <Icon size={18} className="text-[#22c55e]" />
                 </div>
-                <span className="text-xs font-medium text-foreground leading-tight">
+                <span className="text-xs font-medium text-white/90 leading-tight">
                   {label}
                 </span>
               </div>
@@ -137,7 +144,7 @@ export default function HomePage() {
         </section>
 
         {/* Footer */}
-        <footer className="text-center pt-2 pb-1">
+        <footer className="text-center pt-3 pb-1">
           <p className="text-xs text-muted-foreground">
             3F Promotora • Correspondente Autorizado
           </p>
