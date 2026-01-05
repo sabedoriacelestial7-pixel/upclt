@@ -6,7 +6,6 @@ import { BottomNav } from '@/components/BottomNav';
 import { BankCard } from '@/components/BankCard';
 import { ParcelasSelector } from '@/components/ParcelasSelector';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { useApp } from '@/contexts/AppContext';
 import { calcularTodosBancos } from '@/utils/calculos';
 import { formatarMoeda } from '@/utils/formatters';
@@ -16,15 +15,15 @@ export default function SimuladorPage() {
   const navigate = useNavigate();
   const { consulta, simulacao, setSimulacao } = useApp();
 
-  const maxValor = consulta?.valorMargemDisponivel || 50000;
-  const [valor, setValor] = useState(Math.min(simulacao.valor, maxValor));
+  const margemDisponivel = consulta?.valorMargemDisponivel || 5000;
   const [parcelas, setParcelas] = useState(simulacao.parcelas);
 
   useEffect(() => {
-    setSimulacao({ ...simulacao, valor, parcelas });
-  }, [valor, parcelas]);
+    setSimulacao({ ...simulacao, valor: margemDisponivel, parcelas });
+  }, [parcelas]);
 
-  const bancosCalculados = calcularTodosBancos(valor, parcelas);
+  // Calcula baseado na margem disponível
+  const bancosCalculados = calcularTodosBancos(margemDisponivel, parcelas);
   const melhorBanco = bancosCalculados[0];
 
   const handleContratar = (bancoId: string) => {
@@ -37,7 +36,7 @@ export default function SimuladorPage() {
         cpf: consulta.cpf,
         margem: consulta.valorMargemDisponivel,
         bancoEscolhido: banco.nome,
-        valor: valor,
+        valor: banco.valorLiberado,
         parcelas: banco.parcelas,
         valorParcela: banco.valorParcela
       });
@@ -55,9 +54,9 @@ export default function SimuladorPage() {
         {consulta ? (
           <div className="bg-secondary/10 rounded-xl p-3.5 flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Sua margem</p>
+              <p className="text-xs text-muted-foreground">Sua margem mensal</p>
               <p className="text-lg font-bold text-secondary">
-                {formatarMoeda(consulta.valorMargemDisponivel)}
+                {formatarMoeda(margemDisponivel)}
               </p>
             </div>
             <Button
@@ -88,31 +87,28 @@ export default function SimuladorPage() {
           </button>
         )}
 
-        {/* Value Slider */}
+        {/* Parcelas */}
         <div className="bg-card rounded-2xl p-5 shadow-card">
-          <label className="block text-sm font-medium text-card-foreground mb-3">
-            Quanto você precisa?
-          </label>
-
-          <div className="text-center mb-5">
-            <span className="text-3xl font-bold text-card-foreground">
-              {formatarMoeda(valor)}
-            </span>
-          </div>
-
-          <Slider
-            value={[valor]}
-            onValueChange={([v]) => setValor(v)}
-            min={500}
-            max={maxValor}
-            step={100}
-            className="mb-3"
+          <ParcelasSelector
+            value={parcelas}
+            onChange={setParcelas}
           />
+        </div>
 
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>R$ 500</span>
-            <span>{formatarMoeda(maxValor)}</span>
-          </div>
+        {/* Result Preview */}
+        <div className="bg-gradient-to-br from-secondary to-green-600 rounded-2xl p-5 shadow-card text-center">
+          <p className="text-secondary-foreground/80 text-xs mb-1">
+            Valor liberado
+          </p>
+          <p className="text-3xl font-extrabold text-secondary-foreground mb-1">
+            {formatarMoeda(melhorBanco.valorLiberado)}
+          </p>
+          <p className="text-secondary-foreground/80 text-sm">
+            {parcelas}x de {formatarMoeda(melhorBanco.valorParcela)}
+          </p>
+          <p className="text-xs text-secondary-foreground/60 mt-1.5">
+            Melhor taxa: {melhorBanco.nome} ({melhorBanco.taxaMensal.toFixed(2)}% a.m.)
+          </p>
         </div>
 
         {/* Parcelas */}

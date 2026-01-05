@@ -22,8 +22,9 @@ export default function ResultadoPage() {
 
   if (!consulta) return null;
 
-  const valorSimulacao = Math.min(consulta.valorMargemDisponivel, simulacao.valor);
-  const bancosCalculados = calcularTodosBancos(valorSimulacao, simulacao.parcelas);
+  // Calcula baseado na margem disponível
+  const bancosCalculados = calcularTodosBancos(consulta.valorMargemDisponivel, simulacao.parcelas);
+  const melhorBanco = bancosCalculados[0];
 
   const handleContratar = (bancoId: string) => {
     const banco = bancosCalculados.find(b => b.id === bancoId);
@@ -34,7 +35,7 @@ export default function ResultadoPage() {
       cpf: consulta.cpf,
       margem: consulta.valorMargemDisponivel,
       bancoEscolhido: banco.nome,
-      valor: valorSimulacao,
+      valor: banco.valorLiberado,
       parcelas: banco.parcelas,
       valorParcela: banco.valorParcela
     });
@@ -55,10 +56,10 @@ export default function ResultadoPage() {
           </h2>
           <p className="text-white/80 text-sm mb-3">Você tem margem disponível</p>
           <p className="text-4xl font-extrabold text-white animate-count">
-            {formatarMoeda(consulta.valorMargemDisponivel)}
+            {formatarMoeda(melhorBanco.valorLiberado)}
           </p>
           <p className="text-white/70 text-xs mt-1.5">
-            Margem disponível para empréstimo
+            Valor liberado em {simulacao.parcelas}x de {formatarMoeda(melhorBanco.valorParcela)}
           </p>
         </div>
 
@@ -121,8 +122,7 @@ export default function ResultadoPage() {
             Compare e escolha o melhor banco
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
-            Valores calculados para {simulacao.parcelas}x de{' '}
-            {formatarMoeda(valorSimulacao)}
+            Parcela de {formatarMoeda(melhorBanco.valorParcela)} em {simulacao.parcelas}x
           </p>
 
           <div className="space-y-3">

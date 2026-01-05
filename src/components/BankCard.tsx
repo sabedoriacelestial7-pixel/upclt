@@ -45,22 +45,22 @@ export function BankCard({ banco, isFirst = false, onContratar }: BankCardProps)
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <div>
-          <p className="text-xs text-muted-foreground">Taxa</p>
-          <p className="font-semibold text-card-foreground">{banco.taxaMensal.toFixed(2)}% a.m.</p>
+          <p className="text-xs text-muted-foreground">Liberado</p>
+          <p className="font-semibold text-secondary">{formatarMoeda(banco.valorLiberado)}</p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Parcela</p>
           <p className="font-semibold text-card-foreground">{formatarMoeda(banco.valorParcela)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-xs text-muted-foreground">{banco.parcelas}x</p>
           <p className="font-semibold text-card-foreground">{formatarMoeda(banco.valorTotal)}</p>
         </div>
       </div>
 
       <Button 
         onClick={onContratar}
-        className="w-full bg-whatsapp hover:bg-whatsapp/90 text-whatsapp-foreground shadow-button"
+        className="w-full bg-whatsapp hover:bg-whatsapp/90 text-whatsapp-foreground shadow-button touch-manipulation"
       >
         <MessageCircle size={18} />
         Contratar
