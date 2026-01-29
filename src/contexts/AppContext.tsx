@@ -9,6 +9,10 @@ export interface TrabalhadorData {
   valorTotalVencimentos: number;
   nomeEmpregador: string;
   dataAdmissao: string;
+  dataNascimento: string;
+  matricula: string;
+  nomeMae: string;
+  sexo: string;
   elegivel: boolean;
   atualizadoEm: string;
 }
