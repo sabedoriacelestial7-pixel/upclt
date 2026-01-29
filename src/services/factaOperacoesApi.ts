@@ -50,22 +50,22 @@ export async function consultarOperacoesDisponiveis(params: {
   return data as OperacoesDisponiveisResult;
 }
 
-// Agrupa as tabelas por prazo e retorna a melhor opção SEM SEGURO para cada prazo
+// Agrupa as tabelas por prazo e retorna a melhor opção COM SEGURO para cada prazo (maior comissão)
 export function agruparTabelasPorPrazo(tabelas: TabelaFacta[]): Map<number, TabelaFacta> {
   const porPrazo = new Map<number, TabelaFacta>();
   
   for (const tabela of tabelas) {
     const existente = porPrazo.get(tabela.prazo);
-    // Prioriza tabelas SEM seguro, depois menor taxa
-    const tabelaSemSeguro = tabela.valor_seguro === 0;
-    const existenteSemSeguro = existente?.valor_seguro === 0;
+    // Prioriza tabelas COM seguro (maior comissão), depois maior valor líquido
+    const tabelaComSeguro = tabela.valor_seguro > 0;
+    const existenteComSeguro = existente?.valor_seguro ? existente.valor_seguro > 0 : false;
     
     if (!existente) {
       porPrazo.set(tabela.prazo, tabela);
-    } else if (tabelaSemSeguro && !existenteSemSeguro) {
-      // Prefere sem seguro
+    } else if (tabelaComSeguro && !existenteComSeguro) {
+      // Prefere com seguro
       porPrazo.set(tabela.prazo, tabela);
-    } else if (tabelaSemSeguro === existenteSemSeguro && tabela.valor_liquido > existente.valor_liquido) {
+    } else if (tabelaComSeguro === existenteComSeguro && tabela.valor_liquido > existente.valor_liquido) {
       // Se ambas têm/não têm seguro, prefere maior valor líquido
       porPrazo.set(tabela.prazo, tabela);
     }
@@ -80,14 +80,14 @@ export function getPrazosDisponiveis(tabelas: TabelaFacta[]): number[] {
   return prazos.sort((a, b) => a - b);
 }
 
-// Encontra a melhor tabela SEM SEGURO para um prazo específico
+// Encontra a melhor tabela COM SEGURO para um prazo específico (maior comissão)
 export function getMelhorTabelaParaPrazo(tabelas: TabelaFacta[], prazo: number): TabelaFacta | undefined {
   const tabelasDoPrazo = tabelas.filter(t => t.prazo === prazo);
   if (tabelasDoPrazo.length === 0) return undefined;
   
-  // Filtra tabelas sem seguro primeiro
-  const semSeguro = tabelasDoPrazo.filter(t => t.valor_seguro === 0);
-  const candidatas = semSeguro.length > 0 ? semSeguro : tabelasDoPrazo;
+  // Filtra tabelas COM seguro primeiro (maior comissão)
+  const comSeguro = tabelasDoPrazo.filter(t => t.valor_seguro > 0);
+  const candidatas = comSeguro.length > 0 ? comSeguro : tabelasDoPrazo;
   
   // Retorna a com maior valor líquido (melhor para o cliente)
   return candidatas.reduce((melhor, atual) => 
