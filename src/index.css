@@ -6,8 +6,9 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
+    /* Light theme - for app screens (after login) */
+    --background: 0 0% 96%;
+    --foreground: 220 13% 18%;
 
     --card: 0 0% 100%;
     --card-foreground: 220 13% 18%;
@@ -15,55 +16,67 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 13% 18%;
 
-    --primary: 212 52% 25%;
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 142 71% 45%;
+    --secondary: 160 60% 45%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 212 30% 20%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 13% 46%;
 
-    --accent: 45 93% 47%;
-    --accent-foreground: 220 13% 18%;
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --whatsapp: 142 76% 49%;
-    --whatsapp-foreground: 0 0% 100%;
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
 
-    --border: 212 30% 30%;
-    --input: 212 30% 25%;
-    --ring: 142 71% 45%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 160 84% 39%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(180deg, hsl(212 52% 25%) 0%, hsl(222 47% 11%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 60% 35%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(212 52% 30%) 0%, hsl(212 52% 20%) 100%);
+    /* Custom colors */
+    --emerald: 160 84% 39%;
+    --emerald-light: 160 70% 50%;
+    --gray-bg: 0 0% 96%;
+    --gray-card: 0 0% 98%;
 
     /* Shadows */
-    --shadow-card: 0 4px 20px -4px rgba(0, 0, 0, 0.2);
-    --shadow-button: 0 4px 14px -3px rgba(34, 197, 94, 0.4);
-    --shadow-card-hover: 0 8px 30px -6px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
+    --shadow-button: 0 4px 14px -3px rgba(16, 185, 129, 0.35);
+    --shadow-card-hover: 0 4px 16px -4px rgba(0, 0, 0, 0.12);
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-foreground: 220 13% 26%;
+    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 84% 95%;
+    --sidebar-accent-foreground: 160 84% 30%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 160 84% 39%;
   }
 
-  .dark {
-    --background: 222 47% 11%;
+  /* Dark theme - for onboarding/landing screens */
+  .theme-dark {
+    --background: 220 13% 10%;
     --foreground: 0 0% 100%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 18%;
+
+    --card: 220 13% 14%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 220 13% 14%;
+    --popover-foreground: 0 0% 100%;
+
+    --muted: 220 13% 20%;
+    --muted-foreground: 220 13% 65%;
+
+    --border: 220 13% 20%;
+    --input: 220 13% 18%;
   }
 }
 
@@ -78,23 +91,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    background: var(--gradient-primary);
     min-height: 100vh;
     min-height: 100dvh;
   }
 }
 
 @layer utilities {
-  .gradient-primary {
-    background: var(--gradient-primary);
+  .bg-app {
+    background-color: hsl(var(--gray-bg));
   }
 
-  .gradient-card {
-    background: var(--gradient-card);
-  }
-
-  .gradient-hero {
-    background: var(--gradient-hero);
+  .bg-emerald-gradient {
+    background: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 70% 35%) 100%);
   }
 
   .shadow-card {
@@ -123,7 +131,7 @@
   }
 
   .animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: fade-in 0.3s ease-out forwards;
   }
 
   .animate-slide-up {
@@ -132,6 +140,10 @@
 
   .animate-count {
     animation: count-up 0.6s ease-out;
+  }
+
+  .animate-spin-slow {
+    animation: spin 2s linear infinite;
   }
 }
 
@@ -177,6 +189,15 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
@@ -187,6 +208,21 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--secondary));
+  background: hsl(var(--primary));
   border-radius: 2px;
+}
+
+/* Progress bar styles */
+.progress-bar {
+  height: 4px;
+  background: hsl(var(--muted));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: hsl(var(--primary));
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }

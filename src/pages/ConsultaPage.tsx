@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, AlertTriangle, XCircle, AlertCircle, MessageCircle, Lock } from 'lucide-react';
 import { Header } from '@/components/Header';
-import { BottomNav } from '@/components/BottomNav';
+import { FloatingButton } from '@/components/FloatingButton';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import { InputMask } from '@/components/InputMask';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { consultarMargem } from '@/services/factaApi';
 import { getProfile, vincularCPF, podeConsultarCPF } from '@/services/profileService';
 import { validarCPF, formatarCPF } from '@/utils/formatters';
+import { Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { abrirWhatsAppConsulta } from '@/utils/whatsapp';
 
 type ConsultaState = 'idle' | 'loading' | 'not-found' | 'ineligible' | 'error' | 'cpf-blocked';
@@ -25,8 +25,9 @@ export default function ConsultaPage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [state, setState] = useState<ConsultaState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Buscando as melhores taxas...');
 
-  // Carrega o perfil para verificar CPF vinculado
+  // Load profile to check for linked CPF
   useEffect(() => {
     async function loadProfile() {
       if (!user) {
@@ -52,7 +53,7 @@ export default function ConsultaPage() {
   const handleConsulta = async () => {
     if (!isValidCPF || !user) return;
 
-    // Verifica se pode consultar este CPF
+    // Verify if user can consult this CPF
     const verificacao = await podeConsultarCPF(user.id, cpf);
     
     if (!verificacao.permitido) {
@@ -64,11 +65,25 @@ export default function ConsultaPage() {
     setState('loading');
     setErrorMessage('');
 
+    // Animate loading messages
+    const messages = [
+      'Buscando as melhores taxas...',
+      'Avaliando redução de taxas',
+      'Finalizando análise...'
+    ];
+    let messageIndex = 0;
+    const messageInterval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % messages.length;
+      setLoadingMessage(messages[messageIndex]);
+    }, 2000);
+
     try {
       const result = await consultarMargem(cpf);
 
+      clearInterval(messageInterval);
+
       if (result.sucesso && result.dados) {
-        // Se o usuário ainda não tem CPF vinculado, vincula agora
+        // Link CPF if not already linked
         if (!cpfVinculado) {
           const vinculacao = await vincularCPF(user.id, cpf);
           if (vinculacao.success) {
@@ -88,8 +103,17 @@ export default function ConsultaPage() {
         setErrorMessage(result.mensagem);
       }
     } catch (error) {
+      clearInterval(messageInterval);
       setState('error');
       setErrorMessage('Erro ao consultar. Tente novamente.');
+    }
+  };
+
+  const handleRetry = () => {
+    setState('idle');
+    setErrorMessage('');
+    if (cpfVinculado) {
+      setCpf(formatarCPF(cpfVinculado));
     }
   };
 
@@ -97,223 +121,103 @@ export default function ConsultaPage() {
     abrirWhatsAppConsulta(usuario?.nome || 'Cliente', cpf);
   };
 
-  const handleRetry = () => {
-    setState('idle');
-    setErrorMessage('');
-    // Se tem CPF vinculado, restaura ele
-    if (cpfVinculado) {
-      setCpf(formatarCPF(cpfVinculado));
-    }
-  };
-
   if (loadingProfile) {
     return (
-      <div className="min-h-screen min-h-[100dvh] gradient-primary pb-20">
-        <Header title="Consultar Margem" />
-        <div className="flex items-center justify-center py-20">
-          <LoadingSpinner size="lg" text="Carregando..." />
-        </div>
-        <BottomNav />
+      <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (state === 'loading') {
+    return <LoadingScreen variant="searching" message={loadingMessage} />;
+  }
+
+  // Error states
+  if (state === 'not-found' || state === 'ineligible' || state === 'error' || state === 'cpf-blocked') {
+    return (
+      <div className="min-h-screen bg-[#f5f5f5]">
+        <Header showChat />
+        <main className="max-w-md mx-auto px-5 py-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-red-100 mx-auto mb-5 flex items-center justify-center">
+            <Lock size={32} className="text-red-500" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">
+            {state === 'not-found' && 'CPF não encontrado'}
+            {state === 'ineligible' && 'Margem não disponível'}
+            {state === 'error' && 'Erro ao consultar'}
+            {state === 'cpf-blocked' && 'CPF não permitido'}
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            {errorMessage || 'Tente novamente ou entre em contato.'}
+          </p>
+
+          <div className="space-y-3">
+            <Button
+              onClick={handleWhatsApp}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold"
+            >
+              Falar com Consultor
+            </Button>
+            <Button
+              onClick={handleRetry}
+              variant="outline"
+              className="w-full h-12"
+            >
+              Tentar Novamente
+            </Button>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] gradient-primary pb-20">
-      <Header title="Consultar Margem" />
+    <div className="min-h-screen bg-[#f5f5f5]">
+      <Header progress={25} showChat />
 
       <main className="max-w-md mx-auto px-5 py-6">
-        {state === 'idle' && (
-          <div className="text-center">
-            <div 
-              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#22c55e] to-[#16a34a] mx-auto mb-5 flex items-center justify-center shadow-lg shadow-green-500/25 animate-fade-in opacity-0"
-              style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}
-            >
-              <Search size={32} className="text-white" />
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Vamos começar
+        </h1>
+        <p className="text-muted-foreground mb-6">
+          {cpfVinculado ? 'Seu CPF está vinculado à sua conta.' : 'Nos informe seu CPF.'}
+        </p>
+
+        {cpfVinculado ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              CPF Vinculado
+            </label>
+            <div className="flex items-center gap-3">
+              <Lock size={18} className="text-primary" />
+              <span className="text-foreground font-mono text-lg">
+                {formatarCPF(cpfVinculado)}
+              </span>
             </div>
-            <h2 
-              className="text-lg font-bold text-foreground mb-1.5 animate-fade-in opacity-0"
-              style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}
-            >
-              {cpfVinculado ? 'Seu CPF' : 'Informe seu CPF'}
-            </h2>
-            <p 
-              className="text-sm text-muted-foreground mb-6 animate-fade-in opacity-0"
-              style={{ animationDelay: '150ms', animationFillMode: 'forwards' }}
-            >
-              {cpfVinculado 
-                ? 'CPF vinculado à sua conta' 
-                : 'Este CPF será vinculado permanentemente à sua conta'}
-            </p>
-
-            <div 
-              className="bg-white/5 border border-[#22c55e]/30 rounded-2xl p-5 backdrop-blur-sm animate-fade-in opacity-0"
-              style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}
-            >
-              {cpfVinculado ? (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-white/80 mb-2">CPF Vinculado</label>
-                  <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-4 py-3">
-                    <Lock size={18} className="text-[#22c55e]" />
-                    <span className="text-white font-mono">{formatarCPF(cpfVinculado)}</span>
-                  </div>
-                </div>
-              ) : (
-                <InputMask
-                  label="CPF"
-                  placeholder="000.000.000-00"
-                  mask="cpf"
-                  value={cpf}
-                  onChange={setCpf}
-                  error={
-                    cpf.length === 14 && !isValidCPF 
-                      ? 'CPF inválido' 
-                      : isCpfBloqueado 
-                        ? 'Você só pode consultar seu próprio CPF' 
-                        : undefined
-                  }
-                />
-              )}
-
-              <Button
-                onClick={handleConsulta}
-                disabled={!isValidCPF || isCpfBloqueado}
-                className="w-full h-12 mt-5 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white font-semibold text-base shadow-lg shadow-green-500/25 disabled:opacity-50 disabled:shadow-none touch-manipulation transition-all duration-300"
-              >
-                Consultar Margem
-              </Button>
-            </div>
-
-            {!cpfVinculado && (
-              <p 
-                className="text-xs text-amber-400/80 mt-5 animate-fade-in opacity-0"
-                style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}
-              >
-                ⚠️ Atenção: O CPF consultado será vinculado à sua conta
-              </p>
-            )}
           </div>
-        )}
-
-        {state === 'cpf-blocked' && (
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 mx-auto mb-5 flex items-center justify-center border border-amber-500/30">
-              <Lock size={32} className="text-amber-400" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground mb-1.5">
-              CPF não permitido
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              {errorMessage}
-            </p>
-            {cpfVinculado && (
-              <p className="text-sm text-white/70 mb-6">
-                Seu CPF vinculado: <span className="font-mono text-[#22c55e]">{formatarCPF(cpfVinculado)}</span>
-              </p>
-            )}
-
-            <Button
-              onClick={handleRetry}
-              className="w-full h-12 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white font-semibold shadow-lg shadow-green-500/25 touch-manipulation transition-all duration-300"
-            >
-              Consultar Meu CPF
-            </Button>
-          </div>
-        )}
-
-        {state === 'loading' && (
-          <div className="text-center py-12">
-            <LoadingSpinner
-              size="lg"
-              text="Consultando sua margem..."
-              subtext="Isso pode levar alguns segundos"
-            />
-          </div>
-        )}
-
-        {state === 'not-found' && (
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 mx-auto mb-5 flex items-center justify-center border border-amber-500/30">
-              <AlertTriangle size={32} className="text-amber-400" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground mb-1.5">
-              CPF não encontrado
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              Seu CPF ainda não está em nossa base. Entre em contato para consulta completa.
-            </p>
-
-            <Button
-              onClick={handleWhatsApp}
-              className="w-full h-12 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white font-semibold shadow-lg shadow-green-500/25 touch-manipulation transition-all duration-300"
-            >
-              <MessageCircle size={20} />
-              Falar com Consultor
-            </Button>
-
-            <Button
-              onClick={handleRetry}
-              variant="ghost"
-              className="w-full mt-3 text-white/70 hover:text-white hover:bg-white/10 touch-manipulation"
-            >
-              Voltar
-            </Button>
-          </div>
-        )}
-
-        {state === 'ineligible' && (
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-red-500/20 mx-auto mb-5 flex items-center justify-center border border-red-500/30">
-              <XCircle size={32} className="text-red-400" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground mb-1.5">
-              Margem não disponível
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              {errorMessage}
-            </p>
-
-            <Button
-              onClick={handleWhatsApp}
-              className="w-full h-12 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white font-semibold shadow-lg shadow-green-500/25 touch-manipulation transition-all duration-300"
-            >
-              <MessageCircle size={20} />
-              Falar com Consultor
-            </Button>
-
-            <Button
-              onClick={handleRetry}
-              variant="ghost"
-              className="w-full mt-3 text-white/70 hover:text-white hover:bg-white/10 touch-manipulation"
-            >
-              Voltar
-            </Button>
-          </div>
-        )}
-
-        {state === 'error' && (
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-red-500/20 mx-auto mb-5 flex items-center justify-center border border-red-500/30">
-              <AlertCircle size={32} className="text-red-400" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground mb-1.5">
-              Erro ao consultar
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              {errorMessage || 'Tente novamente em alguns segundos'}
-            </p>
-
-            <Button
-              onClick={handleRetry}
-              className="w-full h-12 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white font-semibold shadow-lg shadow-green-500/25 touch-manipulation transition-all duration-300"
-            >
-              Tentar Novamente
-            </Button>
-          </div>
+        ) : (
+          <InputMask
+            label="CPF"
+            placeholder="000.000.000-00"
+            mask="cpf"
+            value={cpf}
+            onChange={setCpf}
+            error={
+              cpf.length === 14 && !isValidCPF 
+                ? 'CPF inválido' 
+                : isCpfBloqueado 
+                  ? 'Você só pode consultar seu próprio CPF' 
+                  : undefined
+            }
+          />
         )}
       </main>
 
-      <BottomNav />
+      <FloatingButton 
+        onClick={handleConsulta}
+        disabled={!isValidCPF || !!isCpfBloqueado}
+      />
     </div>
   );
 }

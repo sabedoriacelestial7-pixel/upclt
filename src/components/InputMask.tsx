@@ -7,12 +7,14 @@ interface InputMaskProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'on
   error?: string;
   mask?: 'cpf' | 'telefone' | 'none';
   icon?: React.ReactNode;
+  variant?: 'light' | 'dark';
   onChange?: (value: string) => void;
 }
 
 export const InputMask = forwardRef<HTMLInputElement, InputMaskProps>(
-  ({ label, error, mask = 'none', icon, onChange, className, value, ...props }, ref) => {
+  ({ label, error, mask = 'none', icon, variant = 'light', onChange, className, value, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
+    const isDark = variant === 'dark';
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let newValue = e.target.value;
@@ -32,13 +34,19 @@ export const InputMask = forwardRef<HTMLInputElement, InputMaskProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className={cn(
+            'block text-sm font-medium mb-2',
+            isDark ? 'text-white/80' : 'text-foreground'
+          )}>
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <div className={cn(
+              'absolute left-4 top-1/2 -translate-y-1/2',
+              isDark ? 'text-white/50' : 'text-muted-foreground'
+            )}>
               {icon}
             </div>
           )}
@@ -49,22 +57,27 @@ export const InputMask = forwardRef<HTMLInputElement, InputMaskProps>(
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             className={cn(
-              'w-full h-14 px-4 rounded-xl text-card-foreground',
-              'bg-card border-2 transition-all duration-200',
-              'placeholder:text-muted-foreground',
+              'w-full h-14 px-4 rounded-xl transition-all duration-200',
               'focus:outline-none',
               icon && 'pl-12',
-              isFocused 
-                ? 'border-secondary shadow-lg shadow-secondary/20' 
-                : 'border-transparent',
-              error && 'border-destructive',
+              isDark ? [
+                'bg-white/10 border border-white/20 text-white',
+                'placeholder:text-white/40',
+                isFocused && 'border-primary ring-2 ring-primary/20',
+                error && 'border-red-500'
+              ] : [
+                'bg-white border border-gray-200 text-foreground',
+                'placeholder:text-muted-foreground',
+                isFocused && 'border-primary ring-2 ring-primary/20',
+                error && 'border-red-500'
+              ],
               className
             )}
             {...props}
           />
         </div>
         {error && (
-          <p className="mt-2 text-sm text-destructive">{error}</p>
+          <p className="mt-2 text-sm text-red-500">{error}</p>
         )}
       </div>
     );

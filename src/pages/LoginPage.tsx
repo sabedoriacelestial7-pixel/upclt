@@ -155,25 +155,25 @@ export default function LoginPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen min-h-[100dvh] gradient-primary flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      <div className="min-h-screen min-h-[100dvh] theme-dark bg-[hsl(220,13%,10%)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] gradient-primary flex flex-col items-center justify-center p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+    <div className="min-h-screen min-h-[100dvh] theme-dark bg-[hsl(220,13%,10%)] flex flex-col items-center justify-center p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo */}
-        <div className="text-center mb-6">
-          <Logo size="xl" className="justify-center mb-3" />
+        <div className="text-center mb-8">
+          <Logo size="xl" variant="dark" className="justify-center mb-3" />
           <p className="text-white/70 text-base">
             Crédito CLT sem burocracia
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm animate-slide-up">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
           <h2 className="text-lg font-bold text-white text-center mb-5">
             {mode === 'login' ? 'Entrar' : 'Criar Conta'}
           </h2>
@@ -187,6 +187,7 @@ export default function LoginPage() {
                 value={formData.nome}
                 onChange={(v) => updateField('nome', v)}
                 error={errors.nome}
+                variant="dark"
               />
             )}
 
@@ -198,6 +199,7 @@ export default function LoginPage() {
               value={formData.email}
               onChange={(v) => updateField('email', v)}
               error={errors.email}
+              variant="dark"
             />
 
             {mode === 'cadastro' && (
@@ -209,6 +211,7 @@ export default function LoginPage() {
                 value={formData.telefone}
                 onChange={(v) => updateField('telefone', v)}
                 error={errors.telefone}
+                variant="dark"
               />
             )}
 
@@ -221,6 +224,7 @@ export default function LoginPage() {
                 value={formData.senha}
                 onChange={(v) => updateField('senha', v)}
                 error={errors.senha}
+                variant="dark"
               />
               <button
                 type="button"
@@ -242,6 +246,7 @@ export default function LoginPage() {
                     value={formData.confirmarSenha}
                     onChange={(v) => updateField('confirmarSenha', v)}
                     error={errors.confirmarSenha}
+                    variant="dark"
                   />
                 </div>
 
@@ -250,14 +255,14 @@ export default function LoginPage() {
                     id="terms"
                     checked={acceptedTerms}
                     onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-                    className="mt-0.5 border-white/30 data-[state=checked]:bg-[#22c55e] data-[state=checked]:border-[#22c55e]"
+                    className="mt-0.5 border-white/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                   <label 
                     htmlFor="terms" 
                     className="text-sm text-white/80 cursor-pointer leading-snug"
                   >
-                    Aceito os <span className="text-[#22c55e] font-medium">Termos de Uso</span> e{' '}
-                    <span className="text-[#22c55e] font-medium">Política de Privacidade</span>
+                    Aceito os <span className="text-primary font-medium">Termos de Uso</span> e{' '}
+                    <span className="text-primary font-medium">Política de Privacidade</span>
                   </label>
                 </div>
                 {errors.terms && (
@@ -269,7 +274,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 mt-5 bg-gradient-to-r from-[#22c55e] to-[#16a34a] hover:from-[#16a34a] hover:to-[#15803d] text-white font-semibold text-base shadow-lg shadow-green-500/25 touch-manipulation transition-all duration-300"
+              className="w-full h-12 mt-5 bg-primary hover:bg-primary/90 text-white font-semibold text-base shadow-button touch-manipulation transition-all duration-300"
             >
               {loading ? 'Carregando...' : mode === 'login' ? 'Entrar' : 'Criar Conta'}
             </Button>
@@ -289,7 +294,7 @@ export default function LoginPage() {
               Não tem conta?{' '}
               <button
                 onClick={() => setMode('cadastro')}
-                className="text-[#22c55e] font-semibold hover:underline touch-manipulation"
+                className="text-primary font-semibold hover:underline touch-manipulation"
               >
                 Criar conta grátis
               </button>
@@ -299,7 +304,7 @@ export default function LoginPage() {
               Já tem conta?{' '}
               <button
                 onClick={() => setMode('login')}
-                className="text-[#22c55e] font-semibold hover:underline touch-manipulation"
+                className="text-primary font-semibold hover:underline touch-manipulation"
               >
                 Entrar
               </button>
