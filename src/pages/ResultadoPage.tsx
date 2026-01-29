@@ -7,8 +7,7 @@ import { BankCard } from '@/components/BankCard';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
 import { calcularTodosBancos } from '@/utils/calculos';
-import { formatarMoeda, formatarData, formatarCPF } from '@/utils/formatters';
-import { abrirWhatsApp } from '@/utils/whatsapp';
+import { formatarMoeda, formatarData } from '@/utils/formatters';
 
 export default function ResultadoPage() {
   const navigate = useNavigate();
@@ -30,14 +29,14 @@ export default function ResultadoPage() {
     const banco = bancosCalculados.find(b => b.id === bancoId);
     if (!banco) return;
 
-    abrirWhatsApp({
-      nome: consulta.nome,
-      cpf: consulta.cpf,
-      margem: consulta.valorMargemDisponivel,
-      bancoEscolhido: banco.nome,
-      valor: banco.valorLiberado,
-      parcelas: banco.parcelas,
-      valorParcela: banco.valorParcela
+    // Navigate to contratacao page with bank data
+    navigate('/contratacao', {
+      state: {
+        banco,
+        // TODO: Get these from real API when implementing operacoes-disponiveis
+        codigoTabela: 112726, // CLT NOVO GOLD
+        coeficiente: '0.077260'
+      }
     });
   };
 

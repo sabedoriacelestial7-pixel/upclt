@@ -145,6 +145,98 @@ export type Database = {
         }
         Relationships: []
       }
+      proposals: {
+        Row: {
+          api_response: Json | null
+          banco_id: string
+          banco_nome: string
+          celular: string | null
+          codigo_af: string | null
+          codigo_cliente: string | null
+          codigo_tabela: number | null
+          coeficiente: number | null
+          cpf: string
+          created_at: string
+          email: string | null
+          id: string
+          id_simulador: string | null
+          margin_query_id: string | null
+          nome: string
+          parcelas: number
+          status: string
+          status_crivo: string | null
+          status_facta: string | null
+          taxa_mensal: number | null
+          updated_at: string
+          url_formalizacao: string | null
+          user_id: string
+          valor_operacao: number
+          valor_parcela: number
+        }
+        Insert: {
+          api_response?: Json | null
+          banco_id: string
+          banco_nome: string
+          celular?: string | null
+          codigo_af?: string | null
+          codigo_cliente?: string | null
+          codigo_tabela?: number | null
+          coeficiente?: number | null
+          cpf: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          id_simulador?: string | null
+          margin_query_id?: string | null
+          nome: string
+          parcelas: number
+          status?: string
+          status_crivo?: string | null
+          status_facta?: string | null
+          taxa_mensal?: number | null
+          updated_at?: string
+          url_formalizacao?: string | null
+          user_id: string
+          valor_operacao: number
+          valor_parcela: number
+        }
+        Update: {
+          api_response?: Json | null
+          banco_id?: string
+          banco_nome?: string
+          celular?: string | null
+          codigo_af?: string | null
+          codigo_cliente?: string | null
+          codigo_tabela?: number | null
+          coeficiente?: number | null
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          id_simulador?: string | null
+          margin_query_id?: string | null
+          nome?: string
+          parcelas?: number
+          status?: string
+          status_crivo?: string | null
+          status_facta?: string | null
+          taxa_mensal?: number | null
+          updated_at?: string
+          url_formalizacao?: string | null
+          user_id?: string
+          valor_operacao?: number
+          valor_parcela?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_margin_query_id_fkey"
+            columns: ["margin_query_id"]
+            isOneToOne: false
+            referencedRelation: "margin_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

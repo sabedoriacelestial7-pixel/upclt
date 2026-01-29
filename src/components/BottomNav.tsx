@@ -1,11 +1,11 @@
-import { Home, Calculator, User, Search } from 'lucide-react';
+import { Home, Calculator, User, Search, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { path: '/', icon: Home, label: 'Início' },
   { path: '/consulta', icon: Search, label: 'Consulta' },
-  { path: '/simulador', icon: Calculator, label: 'Simular' },
+  { path: '/propostas', icon: FileText, label: 'Propostas' },
   { path: '/perfil', icon: User, label: 'Perfil' }
 ];
 
