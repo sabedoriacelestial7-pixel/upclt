@@ -1,8 +1,9 @@
 import { BANCOS_ORDENADOS } from '@/data/bancos';
 
-// Fatores de cálculo Facta Financeira - CLT NOVO GOLD SB
+// Coeficientes Facta Financeira - CLT NOVO GOLD 
+// Estes são os coeficientes por prazo (valor_parcela / valor_liberado)
 // Prazo máximo: 36x para todos os bancos
-const FATORES_PARCELAS: Record<number, number> = {
+const COEFICIENTES: Record<number, number> = {
   5: 0.258812,
   6: 0.258812,
   8: 0.205558,
@@ -17,16 +18,14 @@ const FATORES_PARCELAS: Record<number, number> = {
   36: 0.077260,
 };
 
-// Calcula o valor da parcela baseado na margem disponível (15% da margem)
-export function calcularParcelaDaMargem(margemDisponivel: number): number {
-  const valorParcela = margemDisponivel * 0.15; // 15% da margem (100% - 85%)
-  return Math.round(valorParcela * 100) / 100;
-}
+// IMPORTANTE: valorMargemDisponivel da API Facta JÁ É o valor máximo da parcela permitida
+// Não é necessário calcular 15% - a API já retorna o valor correto da parcela máxima
 
 // Calcula o valor liberado baseado na parcela e número de parcelas
+// Fórmula: valor_liberado = valor_parcela / coeficiente
 export function calcularValorLiberado(valorParcela: number, parcelas: number): number {
-  const fator = FATORES_PARCELAS[parcelas] || 0.077260; // Default para 36x
-  const valorLiberado = valorParcela / fator;
+  const coeficiente = COEFICIENTES[parcelas] || COEFICIENTES[36];
+  const valorLiberado = valorParcela / coeficiente;
   return Math.round(valorLiberado * 100) / 100;
 }
 
@@ -58,12 +57,12 @@ export interface BancoCalculado {
 }
 
 // Calcular para todos os bancos baseado na margem disponível
-// IMPORTANTE: O valor máximo liberado é sempre em 36x para todos os bancos
+// IMPORTANTE: margemDisponivel JÁ É o valor da parcela máxima permitida
 export function calcularTodosBancos(margemDisponivel: number, parcelas: number = PRAZO_MAXIMO): BancoCalculado[] {
-  const valorParcela = calcularParcelaDaMargem(margemDisponivel);
-  // Valor liberado sempre calculado em 36x (máximo)
-  const valorLiberado = calcularValorLiberado(valorParcela, PRAZO_MAXIMO);
-  const valorTotal = calcularTotal(valorParcela, PRAZO_MAXIMO);
+  // A margem disponível é a parcela máxima permitida
+  const valorParcela = Math.round(margemDisponivel * 100) / 100;
+  const valorLiberado = calcularValorLiberado(valorParcela, parcelas);
+  const valorTotal = calcularTotal(valorParcela, parcelas);
   
   return BANCOS_ORDENADOS.map(banco => {
     return {
@@ -71,19 +70,19 @@ export function calcularTodosBancos(margemDisponivel: number, parcelas: number =
       valorParcela,
       valorLiberado,
       valorTotal,
-      parcelas: PRAZO_MAXIMO
+      parcelas
     };
   });
 }
 
-// Obter fatores disponíveis para o seletor de parcelas (máximo 36x)
+// Obter coeficientes disponíveis para o seletor de parcelas (máximo 36x)
 export function getParcelasDisponiveis(): number[] {
-  return Object.keys(FATORES_PARCELAS).map(Number).sort((a, b) => a - b);
+  return Object.keys(COEFICIENTES).map(Number).sort((a, b) => a - b);
 }
 
-// Obter fator específico
-export function getFator(parcelas: number): number {
-  return FATORES_PARCELAS[parcelas] || 0.077260;
+// Obter coeficiente específico
+export function getCoeficiente(parcelas: number): number {
+  return COEFICIENTES[parcelas] || COEFICIENTES[36];
 }
 
 // Prazo máximo permitido
