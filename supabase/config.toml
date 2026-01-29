@@ -1,4 +1,13 @@
 project_id = "jcxsnyutdowkdclxdsph"
 
 [functions.consulta-margem]
-verify_jwt = true
+verify_jwt = false
+
+[functions.facta-operacoes]
+verify_jwt = false
+
+[functions.facta-contratacao]
+verify_jwt = false
+
+[functions.facta-propostas]
+verify_jwt = false

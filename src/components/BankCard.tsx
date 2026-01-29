@@ -1,4 +1,4 @@
-import { Trophy, MessageCircle, ArrowUpRight } from 'lucide-react';
+import { Trophy, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatarMoeda } from '@/utils/formatters';
 import { BancoCalculado } from '@/utils/calculos';
@@ -88,8 +88,8 @@ export function BankCard({ banco, isFirst = false, onContratar }: BankCardProps)
           'group-hover:shadow-xl group-hover:shadow-green-500/30'
         )}
       >
-        <MessageCircle size={18} className="group-hover:scale-110 transition-transform duration-300" />
-        Contratar
+        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
+        Contratar Agora
       </Button>
     </div>
   );

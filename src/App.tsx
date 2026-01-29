@@ -11,6 +11,9 @@ import HomePage from "@/pages/HomePage";
 import ConsultaPage from "@/pages/ConsultaPage";
 import ResultadoPage from "@/pages/ResultadoPage";
 import SimuladorPage from "@/pages/SimuladorPage";
+import ContratacaoPage from "@/pages/ContratacaoPage";
+import PropostasPage from "@/pages/PropostasPage";
+import PropostaDetalhePage from "@/pages/PropostaDetalhePage";
 import PerfilPage from "@/pages/PerfilPage";
 import AjudaPage from "@/pages/AjudaPage";
 import NotFound from "@/pages/NotFound";
@@ -58,6 +61,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <SimuladorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contratacao"
+              element={
+                <ProtectedRoute>
+                  <ContratacaoPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/propostas"
+              element={
+                <ProtectedRoute>
+                  <PropostasPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/propostas/:id"
+              element={
+                <ProtectedRoute>
+                  <PropostaDetalhePage />
                 </ProtectedRoute>
               }
             />
