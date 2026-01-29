@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, ChevronRight } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, ChevronRight, FolderX } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
 import { listarPropostas, atualizarStatusPropostas, Proposta, getStatusInfo } from '@/services/contratacaoApi';
-import { formatarMoeda, formatarData, formatarCPF } from '@/utils/formatters';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { formatarMoeda, formatarData } from '@/utils/formatters';
+import { cn } from '@/lib/utils';
 
 export default function PropostasPage() {
   const navigate = useNavigate();
@@ -62,63 +62,81 @@ export default function PropostasPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen min-h-[100dvh] gradient-primary flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] gradient-primary pb-20">
-      <Header title="Minhas Propostas" showBack />
-
-      <main className="max-w-md mx-auto px-5 py-5 space-y-4">
-        {/* Header com refresh */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {propostas.length === 0 
-              ? 'Nenhuma proposta encontrada' 
-              : `${propostas.length} proposta(s)`}
+    <div className="min-h-screen bg-[#f5f5f5] pb-20">
+      <main className="max-w-md mx-auto px-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-1">
+            Contratações
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Acompanhe o status de cada operação simulada.
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => carregarPropostas(true)}
-            disabled={refreshing}
-            className="text-muted-foreground"
-          >
-            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-            {refreshing ? 'Atualizando...' : 'Atualizar'}
-          </Button>
         </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        {propostas.length === 0 && !error && (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
-            <FileText size={48} className="mx-auto text-white/30 mb-4" />
-            <p className="text-white/60 mb-4">
-              Você ainda não tem propostas de crédito.
-            </p>
-            <Button onClick={() => navigate('/consulta')} className="bg-[#22c55e] hover:bg-[#16a34a]">
-              Consultar Margem
+        {/* Refresh button */}
+        {propostas.length > 0 && (
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => carregarPropostas(true)}
+              disabled={refreshing}
+              className="text-muted-foreground"
+            >
+              <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Atualizando...' : 'Atualizar'}
             </Button>
           </div>
         )}
 
-        {/* Lista de propostas */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center mb-4">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {propostas.length === 0 && !error && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mb-6">
+              <FolderX size={36} className="text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              Você não possui contratações.
+            </h2>
+            <p className="text-muted-foreground text-sm mb-6 max-w-xs">
+              Que tal dar uma olhada nas oportunidade disponíveis para você?
+            </p>
+            <button 
+              onClick={() => navigate('/consulta')}
+              className="text-primary font-medium hover:underline"
+            >
+              Ver oportunidades
+            </button>
+          </div>
+        )}
+
+        {/* Proposals list */}
         <div className="space-y-3">
           {propostas.map((proposta) => {
             const statusInfo = getStatusInfo(proposta.status_facta || proposta.status);
             
             return (
-              <div
+              <button
                 key={proposta.id}
-                className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors cursor-pointer"
+                className={cn(
+                  'w-full bg-white rounded-xl p-4 text-left shadow-card',
+                  'hover:shadow-card-hover transition-all duration-200',
+                  'active:scale-[0.99] touch-manipulation'
+                )}
                 onClick={() => navigate(`/propostas/${proposta.id}`)}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -133,26 +151,29 @@ export default function PropostasPage() {
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={20} className="text-white/30" />
+                  <ChevronRight size={20} className="text-gray-400" />
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-[10px] text-white/50">Valor</p>
+                    <p className="text-xs text-muted-foreground">Valor</p>
                     <p className="text-sm font-semibold text-foreground">
                       {formatarMoeda(proposta.valor_operacao)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-white/50">Parcelas</p>
+                    <p className="text-xs text-muted-foreground">Parcelas</p>
                     <p className="text-sm font-semibold text-foreground">
                       {proposta.parcelas}x de {formatarMoeda(proposta.valor_parcela)}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-medium text-white ${statusInfo.color}`}>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className={cn(
+                    'px-2 py-1 rounded-full text-xs font-medium',
+                    statusInfo.color
+                  )}>
                     {statusInfo.label}
                   </span>
                   
@@ -162,14 +183,14 @@ export default function PropostasPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 text-[#22c55e] text-xs hover:underline"
+                      className="flex items-center gap-1 text-primary text-xs font-medium hover:underline"
                     >
                       <ExternalLink size={12} />
                       Assinar
                     </a>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

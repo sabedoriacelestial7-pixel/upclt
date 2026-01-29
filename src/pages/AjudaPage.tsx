@@ -1,104 +1,89 @@
-import { HelpCircle } from 'lucide-react';
+import { MessageCircle, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
+import { Button } from '@/components/ui/button';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { abrirWhatsAppSimples } from '@/utils/whatsapp';
+import { cn } from '@/lib/utils';
 
 const faqItems = [
   {
-    id: 'credito-clt',
-    question: 'O que é crédito CLT?',
-    answer: 'O crédito CLT é uma modalidade de empréstimo consignado exclusiva para trabalhadores com carteira assinada. As parcelas são descontadas diretamente da folha de pagamento, garantindo taxas de juros mais baixas e maior segurança para ambas as partes.'
+    id: 'quem-pode',
+    question: 'Quem pode contratar conosco?',
+    answer: 'Trabalhadores CLT com mais de 3 meses de carteira assinada, maiores de 18 anos, que possuam margem consignável disponível em sua folha de pagamento.'
   },
   {
-    id: 'desconto-folha',
-    question: 'Como funciona o desconto em folha?',
-    answer: 'O desconto é feito automaticamente pelo empregador antes do pagamento do salário. Por lei, o valor da parcela não pode ultrapassar 35% da sua margem consignável (calculada sobre seu salário líquido). Isso garante que você sempre terá o restante do seu salário disponível.'
+    id: 'produtos',
+    question: 'Quais os nossos produtos e serviços?',
+    answer: 'Oferecemos crédito consignado CLT com as melhores taxas do mercado, parcelamento em até 36 vezes e aprovação em até 24 horas.'
   },
   {
-    id: 'tempo-liberacao',
-    question: 'Quanto tempo demora para liberar?',
-    answer: 'Após a aprovação do empréstimo, o valor é liberado em até 24 a 48 horas úteis diretamente na sua conta bancária. A consulta de margem é instantânea e a análise de crédito é feita em poucos minutos.'
+    id: 'prazo',
+    question: 'Qual é o prazo para concluir a minha operação?',
+    answer: 'Após a aprovação e assinatura do contrato, o valor é liberado em até 1 dia útil diretamente na sua conta bancária.'
   },
   {
-    id: 'negativado',
-    question: 'Posso contratar estando negativado?',
-    answer: 'Sim! Como o crédito CLT tem garantia de desconto em folha, pessoas com restrições no CPF (nome negativado) podem ser aprovadas. A análise é feita com base na sua margem consignável e não no seu histórico de crédito.'
+    id: 'cancelar',
+    question: 'Posso cancelar uma operação de crédito após ser efetivada?',
+    answer: 'Sim, você tem até 7 dias corridos após a contratação para solicitar o cancelamento, conforme o Código de Defesa do Consumidor.'
   },
   {
-    id: 'margem',
-    question: 'O que é margem consignável?',
-    answer: 'A margem consignável é o valor máximo que pode ser comprometido do seu salário para pagamento de empréstimos consignados. Por lei, esse limite é de 35% do seu salário líquido, garantindo que você tenha 65% disponível para suas despesas.'
+    id: 'variacao-margem',
+    question: 'O Troco pode sofrer alterações caso ocorra alguma variação na minha margem durante a operação?',
+    answer: 'Sim, se houver alteração na sua margem entre a simulação e a efetivação, o valor liberado pode ser ajustado proporcionalmente.'
   },
   {
-    id: 'documentos',
-    question: 'Quais documentos preciso?',
-    answer: 'Para consultar sua margem, você só precisa do seu CPF. Para contratar o empréstimo, será necessário: documento de identidade (RG ou CNH), comprovante de residência atualizado e dados bancários para receber o valor.'
+    id: 'variacao-operacao',
+    question: 'O Troco pode mudar caso ocorra alguma variação durante a operação?',
+    answer: 'Sim, taxas e valores podem sofrer pequenas variações até a efetivação final do contrato, dependendo das condições do mercado.'
   }
 ];
 
 export default function AjudaPage() {
   return (
-    <div className="min-h-screen min-h-[100dvh] gradient-primary pb-20">
-      <Header title="Ajuda" showBack />
-
-      <main className="max-w-md mx-auto px-5 py-5 space-y-4">
-        {/* Hero Section */}
-        <div 
-          className="bg-gradient-to-br from-[#22c55e] to-[#16a34a] rounded-2xl p-5 shadow-lg shadow-green-500/25 text-center animate-fade-in opacity-0"
-          style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}
-        >
-          <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
-            <HelpCircle size={28} className="text-white" />
-          </div>
-          <h2 className="text-lg font-bold text-white mb-1">
-            Perguntas Frequentes
-          </h2>
-          <p className="text-sm text-white/80">
-            Tire suas dúvidas sobre crédito consignado CLT
+    <div className="min-h-screen bg-[#f5f5f5] pb-20">
+      <main className="max-w-md mx-auto px-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-1">
+            FAQ
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Dúvidas Frequentes.
           </p>
         </div>
+
+        {/* WhatsApp CTA */}
+        <Button
+          onClick={abrirWhatsAppSimples}
+          className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-semibold text-base shadow-button mb-6"
+        >
+          <MessageCircle size={20} />
+          Converse com a gente
+        </Button>
 
         {/* FAQ Accordion */}
-        <div 
-          className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm animate-fade-in opacity-0"
-          style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}
-        >
-          <Accordion type="single" collapsible className="w-full">
-            {faqItems.map((item, index) => (
-              <AccordionItem 
-                key={item.id} 
-                value={item.id} 
-                className="border-white/10 animate-fade-in opacity-0"
-                style={{ animationDelay: `${200 + index * 75}ms`, animationFillMode: 'forwards' }}
-              >
-                <AccordionTrigger className="px-4 py-3.5 text-left text-sm font-medium text-white hover:no-underline hover:bg-white/5 transition-colors duration-300">
-                  {item.question}
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4 text-sm text-white/70 leading-relaxed">
-                  {item.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-
-        {/* Contact Section */}
-        <div 
-          className="bg-white/5 border border-[#22c55e]/30 rounded-2xl p-5 backdrop-blur-sm animate-fade-in opacity-0"
-          style={{ animationDelay: '650ms', animationFillMode: 'forwards' }}
-        >
-          <h3 className="font-semibold text-white mb-2">
-            Ainda tem dúvidas?
-          </h3>
-          <p className="text-sm text-white/70">
-            Entre em contato conosco pelo WhatsApp ou e-mail que teremos prazer em ajudar.
-          </p>
-        </div>
+        <Accordion type="single" collapsible className="space-y-3">
+          {faqItems.map((item) => (
+            <AccordionItem 
+              key={item.id} 
+              value={item.id} 
+              className="bg-white rounded-xl border-none shadow-card overflow-hidden"
+            >
+              <AccordionTrigger className="px-4 py-4 text-left text-sm font-medium text-foreground hover:no-underline hover:bg-gray-50 transition-colors [&[data-state=open]>svg]:rotate-180">
+                {item.question}
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                {item.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </main>
 
       <BottomNav />

@@ -11,7 +11,7 @@ import LoginPage from "@/pages/LoginPage";
 import HomePage from "@/pages/HomePage";
 import ConsultaPage from "@/pages/ConsultaPage";
 import ResultadoPage from "@/pages/ResultadoPage";
-import SimuladorPage from "@/pages/SimuladorPage";
+import SimulacoesPage from "@/pages/SimulacoesPage";
 import ContratacaoPage from "@/pages/ContratacaoPage";
 import PropostasPage from "@/pages/PropostasPage";
 import PropostaDetalhePage from "@/pages/PropostaDetalhePage";
@@ -59,10 +59,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/simulador"
+                path="/simulacoes"
                 element={
                   <ProtectedRoute>
-                    <SimuladorPage />
+                    <SimulacoesPage />
                   </ProtectedRoute>
                 }
               />

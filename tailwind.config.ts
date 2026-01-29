@@ -50,9 +50,9 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        whatsapp: {
-          DEFAULT: "hsl(var(--whatsapp))",
-          foreground: "hsl(var(--whatsapp-foreground))",
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -98,10 +98,9 @@ export default {
         "bounce-soft": "bounce-soft 2s ease-in-out infinite",
       },
       boxShadow: {
-        "card": "0 4px 20px -4px rgba(0, 0, 0, 0.2)",
-        "card-hover": "0 8px 30px -6px rgba(0, 0, 0, 0.3)",
-        "button": "0 4px 14px -3px rgba(34, 197, 94, 0.4)",
-        "button-primary": "0 4px 14px -3px rgba(30, 58, 95, 0.4)",
+        "card": "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
+        "card-hover": "0 4px 16px -4px rgba(0, 0, 0, 0.12)",
+        "button": "0 4px 14px -3px rgba(16, 185, 129, 0.35)",
       },
     },
   },
