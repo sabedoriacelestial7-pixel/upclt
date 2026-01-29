@@ -34,7 +34,7 @@ export default function ResultadoPage() {
       try {
         const result = await consultarOperacoesDisponiveis({
           cpf: consulta.cpf,
-          dataNascimento: consulta.dataAdmissao, // Usando data admissão como fallback
+          dataNascimento: consulta.dataNascimento,
           valorRenda: consulta.valorTotalVencimentos,
           valorParcela: consulta.valorMargemDisponivel
         });

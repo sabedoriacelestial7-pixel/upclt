@@ -142,6 +142,10 @@ serve(async (req) => {
       valorTotalVencimentos: parseFloat(trabalhador.valorTotalVencimentos) || 0,
       nomeEmpregador: trabalhador.nomeEmpregador,
       dataAdmissao: trabalhador.dataAdmissao,
+      dataNascimento: trabalhador.dataNascimento,
+      matricula: trabalhador.matricula,
+      nomeMae: trabalhador.nomeMae,
+      sexo: trabalhador.sexo_codigo,
       elegivel: elegivel,
       atualizadoEm: trabalhador.updated_at || new Date().toISOString()
     };
