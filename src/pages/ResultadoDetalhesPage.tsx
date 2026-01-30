@@ -5,6 +5,25 @@ import { Button } from '@/components/ui/button';
 import { useApp } from '@/contexts/AppContext';
 import { formatarMoeda } from '@/utils/formatters';
 import { TabelaFacta } from '@/services/factaOperacoesApi';
+import { Info } from 'lucide-react';
+
+// Calcular IOF conforme regras do Banco Central
+// IOF = 0,38% flat + 0,0082% ao dia (limitado a 3% do valor financiado)
+function calcularIOF(valorFinanciado: number, prazoMeses: number): number {
+  const iofFlat = valorFinanciado * 0.0038; // 0,38% flat
+  const prazoDias = prazoMeses * 30;
+  const iofDiario = Math.min(valorFinanciado * 0.000082 * prazoDias, valorFinanciado * 0.03); // 0,0082% ao dia, máx 3%
+  return iofFlat + iofDiario;
+}
+
+// Calcular CET usando a fórmula padrão
+// CET = ((Total a Pagar / Valor Líquido) ^ (1/prazo)) - 1
+function calcularCET(valorLiquido: number, parcela: number, prazo: number): { mensal: number; anual: number } {
+  const totalPagar = parcela * prazo;
+  const cetMensal = (Math.pow(totalPagar / valorLiquido, 1 / prazo) - 1) * 100;
+  const cetAnual = (Math.pow(1 + cetMensal / 100, 12) - 1) * 100;
+  return { mensal: cetMensal, anual: cetAnual };
+}
 
 export default function ResultadoDetalhesPage() {
   const navigate = useNavigate();
@@ -29,7 +48,7 @@ export default function ResultadoDetalhesPage() {
     );
   }
 
-  // Calculate values
+  // Values from API
   const valorParcela = tabela.parcela;
   const prazo = tabela.prazo;
   const valorLiquido = tabela.valor_liquido;
@@ -37,16 +56,15 @@ export default function ResultadoDetalhesPage() {
   const taxaMensal = tabela.taxa;
   const valorSeguro = tabela.valor_seguro || 0;
   
-  // Calculate IOF (approximately 3% of loan value + 0.38% flat)
-  const iofEstimado = valorContrato * 0.03 + valorContrato * 0.0038;
+  // Calculate IOF based on financed amount
+  const valorFinanciado = valorContrato - valorSeguro;
+  const iof = calcularIOF(valorFinanciado, prazo);
   
   // Calculate annual rate: (1 + taxaMensal/100)^12 - 1
   const taxaAnual = (Math.pow(1 + taxaMensal / 100, 12) - 1) * 100;
   
-  // Calculate CET (Custo Efetivo Total) - estimated with IOF and fees
-  // CET monthly ≈ taxa + (IOF / prazo / valorLiquido * 100)
-  const cetMensal = taxaMensal + ((iofEstimado / prazo) / valorLiquido) * 100;
-  const cetAnual = (Math.pow(1 + cetMensal / 100, 12) - 1) * 100;
+  // Calculate CET using standard formula
+  const cet = calcularCET(valorLiquido, valorParcela, prazo);
   
   // Total a pagar
   const totalPagar = valorParcela * prazo;
@@ -114,8 +132,11 @@ export default function ResultadoDetalhesPage() {
 
             {/* IOF */}
             <div className="flex justify-between items-center py-4 border-b border-gray-100">
-              <span className="text-muted-foreground text-sm">IOF</span>
-              <span className="font-semibold text-foreground">{formatarMoeda(iofEstimado)}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">IOF</span>
+                <Info size={14} className="text-muted-foreground/50" />
+              </div>
+              <span className="font-semibold text-foreground">{formatarMoeda(iof)}</span>
             </div>
 
             {/* Seguro (if applicable) */}
@@ -138,11 +159,14 @@ export default function ResultadoDetalhesPage() {
 
             {/* CET */}
             <div className="flex justify-between items-center py-4 border-b border-gray-100">
-              <span className="text-muted-foreground text-sm">Custo efetivo total</span>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">Custo efetivo total</span>
+                <Info size={14} className="text-muted-foreground/50" />
+              </div>
               <div className="flex items-center gap-3">
-                <span className="font-semibold text-foreground">{cetMensal.toFixed(2)}% a.m.</span>
+                <span className="font-semibold text-foreground">{cet.mensal.toFixed(2)}% a.m.</span>
                 <div className="w-px h-4 bg-gray-300" />
-                <span className="font-semibold text-foreground">{cetAnual.toFixed(2)}% a.a.</span>
+                <span className="font-semibold text-foreground">{cet.anual.toFixed(2)}% a.a.</span>
               </div>
             </div>
 
