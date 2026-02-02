@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 import LoginPage from "@/pages/LoginPage";
 import WelcomePage from "@/pages/WelcomePage";
+import SobrePage from "@/pages/SobrePage";
 import HomePage from "@/pages/HomePage";
 import ConsultaPage from "@/pages/ConsultaPage";
 import ResultadoPage from "@/pages/ResultadoPage";
@@ -34,6 +35,7 @@ const App = () => (
             <Routes>
               {/* Public Routes */}
               <Route path="/welcome" element={<WelcomePage />} />
+              <Route path="/sobre" element={<SobrePage />} />
               <Route path="/login" element={<LoginPage />} />
 
               {/* Protected Routes */}
