@@ -138,7 +138,7 @@ export default function WelcomePage() {
             </Button>
 
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/sobre')}
               className="w-full text-center text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors py-2"
             >
               Conheça a UpCLT
