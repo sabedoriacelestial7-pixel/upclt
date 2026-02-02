@@ -10,9 +10,9 @@ export default function SobrePage() {
   const navigate = useNavigate();
 
   const stats = [
-    { icon: Users, value: 50, prefix: '+', suffix: ' mil', label: 'pessoas', description: 'já compararam taxas' },
-    { icon: Banknote, value: 100, prefix: '+R$ ', suffix: ' mi', label: 'em crédito', description: 'contratados' },
-    { icon: Building2, value: 10, prefix: '+', suffix: '', label: 'bancos', description: 'parceiros' },
+    { icon: Users, value: 50, prefix: '+', suffix: ' mil', label: 'pessoas', description: 'já compararam taxas', color: 'from-emerald-500 to-emerald-600', stringColor: 'from-emerald-500/50' },
+    { icon: Banknote, value: 100, prefix: '+R$ ', suffix: ' mi', label: 'em crédito', description: 'contratados', color: 'from-violet-500 to-violet-600', stringColor: 'from-violet-500/50' },
+    { icon: Building2, value: 10, prefix: '+', suffix: '', label: 'bancos', description: 'parceiros', color: 'from-amber-500 to-amber-600', stringColor: 'from-amber-500/50' },
   ];
 
   const features = [
@@ -108,7 +108,7 @@ export default function SobrePage() {
               >
                 {/* Balloon */}
                 <div 
-                  className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-lg flex flex-col items-center justify-center text-primary-foreground relative overflow-hidden"
+                  className={`w-24 h-24 rounded-full bg-gradient-to-br ${stat.color} shadow-lg flex flex-col items-center justify-center text-white relative overflow-hidden`}
                   style={{
                     animation: `float 3s ease-in-out ${floatDelay}s infinite`,
                   }}
@@ -132,7 +132,7 @@ export default function SobrePage() {
                 </div>
                 
                 {/* Balloon string */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-full w-px h-6 bg-gradient-to-b from-primary/50 to-transparent" />
+                <div className={`absolute left-1/2 -translate-x-1/2 top-full w-px h-6 bg-gradient-to-b ${stat.stringColor} to-transparent`} />
                 
                 {/* Description tooltip on hover */}
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-muted-foreground text-center opacity-70">
