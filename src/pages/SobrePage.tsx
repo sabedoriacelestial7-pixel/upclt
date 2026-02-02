@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Banknote, Building2, ShieldCheck, Clock, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Users, Banknote, Building2, ShieldCheck, Clock, TrendingDown, Star, Quote } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import welcomeHero from '@/assets/welcome-hero.png';
 
 export default function SobrePage() {
@@ -17,6 +18,33 @@ export default function SobrePage() {
     { icon: ShieldCheck, title: 'Seguro e confiável', description: 'Seus dados protegidos com criptografia' },
     { icon: Clock, title: 'Rápido e fácil', description: 'Consulta em menos de 2 minutos' },
     { icon: TrendingDown, title: 'Menores taxas', description: 'Economize até 40% nos juros' },
+  ];
+
+  const testimonials = [
+    { 
+      name: 'Carlos Silva', 
+      role: 'Operador de Logística',
+      text: 'Consegui um empréstimo com taxa muito menor do que o meu banco oferecia. Economizei mais de R$ 2.000!',
+      rating: 5
+    },
+    { 
+      name: 'Ana Rodrigues', 
+      role: 'Assistente Administrativa',
+      text: 'Processo super rápido e transparente. Em menos de 10 minutos já tinha as propostas na mão.',
+      rating: 5
+    },
+    { 
+      name: 'Pedro Santos', 
+      role: 'Técnico de Manutenção',
+      text: 'Finalmente um app que mostra todas as opções de uma vez. Recomendo demais!',
+      rating: 5
+    },
+    { 
+      name: 'Maria Oliveira', 
+      role: 'Recepcionista',
+      text: 'Atendimento excelente e consegui a menor taxa do mercado. Muito satisfeita!',
+      rating: 5
+    },
   ];
 
   return (
@@ -118,6 +146,50 @@ export default function SobrePage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Testimonials Carousel */}
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold text-foreground text-center mb-4">
+            O que dizem nossos clientes
+          </h2>
+          <Carousel
+            opts={{
+              align: 'start',
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2">
+              {testimonials.map((testimonial, index) => (
+                <CarouselItem key={index} className="pl-2 basis-[85%]">
+                  <div className="p-4 rounded-2xl bg-card border border-border h-full">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Quote className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-foreground text-sm">
+                          {testimonial.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {testimonial.role}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                      "{testimonial.text}"
+                    </p>
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: testimonial.rating }).map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                      ))}
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         </div>
       </main>
 
