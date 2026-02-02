@@ -1,20 +1,24 @@
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import { ParticleBackground } from '@/components/ParticleBackground';
 import welcomeHero from '@/assets/welcome-hero.png';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="theme-dark min-h-screen min-h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="theme-dark min-h-screen min-h-[100dvh] bg-background flex flex-col overflow-hidden relative">
+      {/* Particle Background */}
+      <ParticleBackground />
+
       {/* Header with Logo */}
-      <header className="pt-[env(safe-area-inset-top)] px-6 pt-8 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+      <header className="relative z-10 pt-[env(safe-area-inset-top)] px-6 pt-8 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
         <Logo size="md" variant="dark" />
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-8">
         {/* Hero Image with Diamond Shape */}
         <div 
           className="relative mb-12 animate-scale-in" 
