@@ -32,6 +32,21 @@ async function getFactaToken(): Promise<string> {
     }
   });
 
+  // Check if response is OK
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Facta token request failed: ${response.status} - ${errorText.substring(0, 200)}`);
+    throw new Error(`Falha na autenticação com Facta (HTTP ${response.status})`);
+  }
+
+  // Check content type before parsing
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    console.error(`Facta returned non-JSON response: ${text.substring(0, 200)}`);
+    throw new Error("API Facta indisponível. Tente novamente em alguns minutos.");
+  }
+
   const data = await response.json();
   console.log("Token response:", JSON.stringify(data));
   
