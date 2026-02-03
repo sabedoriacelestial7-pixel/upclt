@@ -84,8 +84,7 @@ export default function ContratacaoPage() {
     numero: '',
     complemento: '',
     bairro: '',
-    cidade: '', // Nome da cidade (string)
-    cidadeIbge: '', // Código IBGE da cidade (para validação)
+    cidade: '', // Código IBGE da cidade
     estado: '',
     
     // Filiação
@@ -142,6 +141,10 @@ export default function ContratacaoPage() {
       buscarCidadesPorEstado(formData.estado)
         .then(cidades => {
           setCidadesEndereco(cidades);
+          // Limpa cidade se não existir na nova lista
+          if (formData.cidade && !cidades.some(c => c.id.toString() === formData.cidade)) {
+            setFormData(prev => ({ ...prev, cidade: '' }));
+          }
         })
         .finally(() => setLoadingCidadesEndereco(false));
     } else {
@@ -171,13 +174,29 @@ export default function ContratacaoPage() {
           endereco: data.logradouro || '',
           bairro: data.bairro || '',
           estado: uf,
-          cidade: nomeCidade, // Nome da cidade (string)
+          cidade: '', // Será preenchido após carregar cidades
         }));
         
-        // Carrega lista de cidades para o select
-        if (uf) {
+        // Busca as cidades do estado e encontra o código IBGE
+        if (uf && nomeCidade) {
           const cidades = await buscarCidadesPorEstado(uf);
           setCidadesEndereco(cidades);
+          
+          const cidadeNormalizada = nomeCidade
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+          
+          const cidadeEncontrada = cidades.find(c => 
+            c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === cidadeNormalizada
+          );
+          
+          if (cidadeEncontrada) {
+            setFormData(prev => ({
+              ...prev,
+              cidade: cidadeEncontrada.id.toString()
+            }));
+          }
         }
       }
     } catch (error) {
@@ -604,12 +623,20 @@ export default function ContratacaoPage() {
 
               <div className="col-span-2">
                 <Label className="text-xs text-white/60">Cidade *</Label>
-                <Input
-                  value={formData.cidade}
-                  onChange={(e) => handleChange('cidade', e.target.value)}
-                  className="bg-white border-gray-300 text-black placeholder:text-gray-500"
-                  placeholder="Nome da cidade"
-                />
+                <Select 
+                  value={formData.cidade} 
+                  onValueChange={(v) => handleChange('cidade', v)}
+                  disabled={!formData.estado || loadingCidadesEndereco}
+                >
+                  <SelectTrigger className="bg-white border-gray-300 text-black">
+                    <SelectValue placeholder={loadingCidadesEndereco ? "Carregando..." : "Selecione"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-300 z-[100] max-h-60">
+                    {cidadesEndereco.map(cidade => (
+                      <SelectItem key={cidade.id} value={cidade.id.toString()}>{cidade.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
