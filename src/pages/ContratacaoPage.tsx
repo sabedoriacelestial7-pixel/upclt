@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, User, Phone, Mail, MapPin, CreditCard, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, MapPin, CreditCard, FileText, AlertCircle, CheckCircle, Loader2, MessageCircle, HeadphonesIcon } from 'lucide-react';
+import { abrirWhatsAppSimples } from '@/utils/whatsapp';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +64,7 @@ export default function ContratacaoPage() {
   const [loadingCidades, setLoadingCidades] = useState(false);
   const [loadingCidadesEndereco, setLoadingCidadesEndereco] = useState(false);
   const [propostaUrl, setPropostaUrl] = useState<string | null>(null);
+  const [creditPolicyError, setCreditPolicyError] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -286,9 +288,17 @@ export default function ContratacaoPage() {
       const result = await realizarContratacao(dados);
 
       if (result.erro) {
-        // Verifica se o erro é sobre parcela máxima excedida
         const mensagem = result.mensagem || '';
+        
+        // Verifica se o erro é sobre parcela máxima excedida
         const matchParcela = mensagem.match(/valor Máximo de Prestação disponível é de R\$ ([\d.,]+)/i);
+        
+        // Verifica se é erro de política de crédito (código interno: POLICY_REJECTED)
+        const isPoliticaCredito = mensagem.toLowerCase().includes('política de crédito') || 
+                                   mensagem.toLowerCase().includes('politica de credito') ||
+                                   mensagem.toLowerCase().includes('fora da política') ||
+                                   mensagem.toLowerCase().includes('reprovado') ||
+                                   mensagem.toLowerCase().includes('crivo');
         
         if (matchParcela) {
           const parcelaMaxReal = matchParcela[1];
@@ -297,8 +307,19 @@ export default function ContratacaoPage() {
             description: `Sua margem foi atualizada. O valor máximo de parcela agora é R$ ${parcelaMaxReal}. Por favor, refaça a simulação.`,
             variant: 'destructive',
           });
-          // Redireciona para refazer consulta após 3 segundos
           setTimeout(() => navigate('/consulta'), 3000);
+        } else if (isPoliticaCredito) {
+          // Log técnico para admins (código: POLICY_REJECTED)
+          console.error('[POLICY_REJECTED]', {
+            cpf: consulta?.cpf,
+            nome: consulta?.nome,
+            mensagemOriginal: mensagem,
+            timestamp: new Date().toISOString(),
+            dados: { banco: banco?.nome, valor: banco?.valorLiberado, parcelas: banco?.parcelas }
+          });
+          
+          // Mostra tela de erro amigável para o usuário
+          setCreditPolicyError(true);
         } else {
           toast({
             title: 'Erro na contratação',
@@ -326,6 +347,55 @@ export default function ContratacaoPage() {
   };
 
   if (!consulta || !banco) return null;
+
+  // Tela de erro de política de crédito - amigável para o usuário
+  if (creditPolicyError) {
+    return (
+      <div className="min-h-screen min-h-[100dvh] gradient-primary">
+        <Header title="Contratação" showBack />
+        
+        <main className="max-w-md mx-auto px-5 py-8">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-amber-500/20 mx-auto mb-5 flex items-center justify-center">
+              <HeadphonesIcon size={40} className="text-amber-400" />
+            </div>
+            
+            <h2 className="text-xl font-bold text-white mb-3">
+              Ops! Consulta não processada
+            </h2>
+            
+            <p className="text-white/80 text-sm mb-6 leading-relaxed">
+              Não se preocupe! Nossa equipe está pronta para ajudar você a descobrir 
+              o valor disponível para seu empréstimo. Clique no botão abaixo e fale 
+              diretamente com um de nossos consultores especializados.
+            </p>
+            
+            <div className="space-y-3">
+              <Button
+                onClick={() => abrirWhatsAppSimples()}
+                className="w-full h-14 bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold text-base gap-2"
+              >
+                <MessageCircle size={22} />
+                Falar com Consultor Agora
+              </Button>
+              
+              <Button
+                onClick={() => navigate('/consulta')}
+                variant="outline"
+                className="w-full h-12 border-white/30 text-white hover:bg-white/10"
+              >
+                Fazer Nova Consulta
+              </Button>
+            </div>
+            
+            <p className="text-white/50 text-xs mt-6">
+              Atendimento rápido via WhatsApp • Segunda a Sexta, 8h às 18h
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (success) {
     return (
