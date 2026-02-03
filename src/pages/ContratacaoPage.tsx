@@ -286,11 +286,26 @@ export default function ContratacaoPage() {
       const result = await realizarContratacao(dados);
 
       if (result.erro) {
-        toast({
-          title: 'Erro na contratação',
-          description: result.mensagem,
-          variant: 'destructive',
-        });
+        // Verifica se o erro é sobre parcela máxima excedida
+        const mensagem = result.mensagem || '';
+        const matchParcela = mensagem.match(/valor Máximo de Prestação disponível é de R\$ ([\d.,]+)/i);
+        
+        if (matchParcela) {
+          const parcelaMaxReal = matchParcela[1];
+          toast({
+            title: 'Margem atualizada',
+            description: `Sua margem foi atualizada. O valor máximo de parcela agora é R$ ${parcelaMaxReal}. Por favor, refaça a simulação.`,
+            variant: 'destructive',
+          });
+          // Redireciona para refazer consulta após 3 segundos
+          setTimeout(() => navigate('/consulta'), 3000);
+        } else {
+          toast({
+            title: 'Erro na contratação',
+            description: result.mensagem,
+            variant: 'destructive',
+          });
+        }
       } else {
         setSuccess(true);
         setPropostaUrl(result.proposta?.urlFormalizacao || null);
