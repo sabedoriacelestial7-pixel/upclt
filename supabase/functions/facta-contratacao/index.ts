@@ -235,7 +235,7 @@ serve(async (req) => {
     const estadoNaturalIbge = UF_TO_IBGE[params.estadoNatural] || params.estadoNatural;
     const estadoRgIbge = UF_TO_IBGE[params.estadoRg] || params.estadoRg;
     
-    console.log("Address data - cidade:", params.cidade, "estado:", estadoIbge, "cidade_natural:", params.cidadeNatural, "estado_natural:", estadoNaturalIbge);
+    console.log("Address data - cidade (nome):", params.cidade, "estado (ibge):", estadoIbge, "cidade_natural (ibge):", params.cidadeNatural, "estado_natural (ibge):", estadoNaturalIbge);
     
     const dadosFormData: Record<string, string> = {
       id_simulador: idSimulador,
