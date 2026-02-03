@@ -204,7 +204,10 @@ serve(async (req) => {
     }
 
     // Authorization granted - extract worker data
-    if (!factaData.dados || factaData.dados.length === 0) {
+    // Facta returns data in dados_trabalhador.dados structure
+    const dadosTrabalhador = factaData.dados_trabalhador?.dados || factaData.dados;
+    
+    if (!dadosTrabalhador || dadosTrabalhador.length === 0) {
       return new Response(
         JSON.stringify({ 
           sucesso: false, 
@@ -216,7 +219,7 @@ serve(async (req) => {
       );
     }
 
-    const trabalhador = factaData.dados[0];
+    const trabalhador = dadosTrabalhador[0];
     const elegivel = trabalhador.elegivel === "S" || trabalhador.elegivel === "1" || trabalhador.elegivel === true;
 
     const dadosFormatados = {
