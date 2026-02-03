@@ -170,7 +170,7 @@ serve(async (req) => {
             'Content-Type': 'application/x-www-form-urlencoded'
           },
           body: {
-            averbador: '20222',
+            averbador: '10010',
             nome: nomeCliente,
             cpf: cpfLimpo,
             celular: celularLimpo,
