@@ -84,7 +84,8 @@ export default function ContratacaoPage() {
     numero: '',
     complemento: '',
     bairro: '',
-    cidade: '',
+    cidade: '', // Nome da cidade (string)
+    cidadeIbge: '', // Código IBGE da cidade (para validação)
     estado: '',
     
     // Filiação
@@ -141,10 +142,6 @@ export default function ContratacaoPage() {
       buscarCidadesPorEstado(formData.estado)
         .then(cidades => {
           setCidadesEndereco(cidades);
-          // Limpa cidade se não existir na nova lista
-          if (formData.cidade && !cidades.some(c => c.id.toString() === formData.cidade)) {
-            setFormData(prev => ({ ...prev, cidade: '' }));
-          }
         })
         .finally(() => setLoadingCidadesEndereco(false));
     } else {
@@ -168,35 +165,19 @@ export default function ContratacaoPage() {
         const uf = data.uf || '';
         const nomeCidade = data.localidade || '';
         
-        // Primeiro atualiza o estado para carregar as cidades
+        // Atualiza o formulário com dados do CEP
         setFormData(prev => ({
           ...prev,
           endereco: data.logradouro || '',
           bairro: data.bairro || '',
           estado: uf,
-          cidade: '', // Será preenchido após carregar cidades
+          cidade: nomeCidade, // Nome da cidade (string)
         }));
         
-        // Busca as cidades do estado e encontra o código IBGE
-        if (uf && nomeCidade) {
+        // Carrega lista de cidades para o select
+        if (uf) {
           const cidades = await buscarCidadesPorEstado(uf);
           setCidadesEndereco(cidades);
-          
-          const cidadeNormalizada = nomeCidade
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-          
-          const cidadeEncontrada = cidades.find(c => 
-            c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === cidadeNormalizada
-          );
-          
-          if (cidadeEncontrada) {
-            setFormData(prev => ({
-              ...prev,
-              cidade: cidadeEncontrada.id.toString()
-            }));
-          }
         }
       }
     } catch (error) {
@@ -623,20 +604,12 @@ export default function ContratacaoPage() {
 
               <div className="col-span-2">
                 <Label className="text-xs text-white/60">Cidade *</Label>
-                <Select 
-                  value={formData.cidade} 
-                  onValueChange={(v) => handleChange('cidade', v)}
-                  disabled={!formData.estado || loadingCidadesEndereco}
-                >
-                  <SelectTrigger className="bg-white border-gray-300 text-black">
-                    <SelectValue placeholder={loadingCidadesEndereco ? "Carregando..." : "Selecione"} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-300 z-[100] max-h-60">
-                    {cidadesEndereco.map(cidade => (
-                      <SelectItem key={cidade.id} value={cidade.id.toString()}>{cidade.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={formData.cidade}
+                  onChange={(e) => handleChange('cidade', e.target.value)}
+                  className="bg-white border-gray-300 text-black placeholder:text-gray-500"
+                  placeholder="Nome da cidade"
+                />
               </div>
             </div>
 
