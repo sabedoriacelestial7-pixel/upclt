@@ -1,5 +1,7 @@
-import { supabase } from '@/integrations/supabase/client';
 import { TrabalhadorData } from '@/contexts/AppContext';
+
+// Proxy local - porta 3001
+const PROXY_BASE_URL = 'http://localhost:3001';
 
 export interface AutorizacaoResult {
   sucesso: boolean;
@@ -17,6 +19,7 @@ export interface ConsultaAutorizadaResult {
 
 /**
  * Solicita autorização do cliente via SMS ou WhatsApp
+ * Usa o proxy local na porta 3001
  */
 export async function solicitarAutorizacao(
   cpf: string, 
@@ -28,70 +31,42 @@ export async function solicitarAutorizacao(
   const celularLimpo = celular.replace(/\D/g, '');
 
   try {
-    const { data, error } = await supabase.functions.invoke('facta-autorizar', {
-      body: { 
+    const response = await fetch(`${PROXY_BASE_URL}/api/facta/autorizar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
         cpf: cpfLimpo, 
         celular: celularLimpo, 
         canal,
         nome: nome || 'Cliente'
-      }
+      })
     });
 
-    if (error) {
-      console.error('Error calling facta-autorizar:', error);
-      
-      // Check for specific auth errors (401 Unauthorized)
-      const errorMsg = error.message || '';
-      const isAuthError = errorMsg.includes('401') || errorMsg.includes('Unauthorized');
-      
-      // Try to get a more specific error from the response context
-      if (error.context?.body) {
-        try {
-          const bodyData = typeof error.context.body === 'string' 
-            ? JSON.parse(error.context.body) 
-            : error.context.body;
-          if (bodyData?.mensagem) {
-            return {
-              sucesso: false,
-              mensagem: bodyData.mensagem
-            };
-          }
-        } catch (e) {
-          // Ignore parse errors
-        }
-      }
-      
-      if (isAuthError) {
-        return {
-          sucesso: false,
-          mensagem: 'Sua sessão expirou. Faça login novamente para continuar.'
-        };
-      }
-      
-      // For other errors, return a more descriptive message
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Error calling proxy facta-autorizar:', data);
       return {
         sucesso: false,
-        mensagem: `Erro ao solicitar autorização: ${errorMsg || 'Tente novamente em alguns instantes.'}`
+        mensagem: data.mensagem || data.error || 'Erro ao solicitar autorização'
       };
-    }
-
-    // If data contains the actual error from the edge function
-    if (data && !data.sucesso) {
-      return data as AutorizacaoResult;
     }
 
     return data as AutorizacaoResult;
   } catch (err) {
-    console.error('Exception calling facta-autorizar:', err);
+    console.error('Exception calling proxy facta-autorizar:', err);
     return {
       sucesso: false,
-      mensagem: 'Erro de conexão. Verifique sua internet e tente novamente.'
+      mensagem: 'Erro de conexão com o proxy local. Verifique se o servidor está rodando na porta 3001.'
     };
   }
 }
 
 /**
  * Verifica se o cliente autorizou e retorna os dados de margem
+ * Usa o proxy local na porta 3001
  */
 export async function verificarAutorizacao(
   cpf: string, 
@@ -100,22 +75,38 @@ export async function verificarAutorizacao(
   const cpfLimpo = cpf.replace(/\D/g, '');
   const celularLimpo = celular.replace(/\D/g, '');
 
-  const { data, error } = await supabase.functions.invoke('facta-consultar-autorizado', {
-    body: { 
-      cpf: cpfLimpo, 
-      celular: celularLimpo 
-    }
-  });
+  try {
+    const response = await fetch(`${PROXY_BASE_URL}/api/facta/consultar-autorizado`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        cpf: cpfLimpo, 
+        celular: celularLimpo 
+      })
+    });
 
-  if (error) {
-    console.error('Error calling facta-consultar-autorizado:', error);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Error calling proxy facta-consultar-autorizado:', data);
+      return {
+        sucesso: false,
+        mensagem: data.mensagem || data.error || 'Erro ao verificar autorização',
+        status: 'error',
+        dados: null
+      };
+    }
+
+    return data as ConsultaAutorizadaResult;
+  } catch (err) {
+    console.error('Exception calling proxy facta-consultar-autorizado:', err);
     return {
       sucesso: false,
-      mensagem: error.message || 'Erro ao verificar autorização',
+      mensagem: 'Erro de conexão com o proxy local. Verifique se o servidor está rodando na porta 3001.',
       status: 'error',
       dados: null
     };
   }
-
-  return data as ConsultaAutorizadaResult;
 }

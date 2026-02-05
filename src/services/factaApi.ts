@@ -1,5 +1,7 @@
 import { TrabalhadorData } from '@/contexts/AppContext';
-import { supabase } from '@/integrations/supabase/client';
+
+// Proxy local - porta 3001
+const PROXY_BASE_URL = 'http://localhost:3001';
 
 export interface ConsultaResult {
   sucesso: boolean;
@@ -7,21 +9,39 @@ export interface ConsultaResult {
   dados: TrabalhadorData | null;
 }
 
+/**
+ * Consulta margem via proxy local na porta 3001
+ */
 export async function consultarMargem(cpf: string): Promise<ConsultaResult> {
   const cpfLimpo = cpf.replace(/\D/g, '');
 
-  const { data, error } = await supabase.functions.invoke('consulta-margem', {
-    body: { cpf: cpfLimpo }
-  });
+  try {
+    const response = await fetch(`${PROXY_BASE_URL}/api/facta/consulta-margem`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ cpf: cpfLimpo })
+    });
 
-  if (error) {
-    console.error('Error calling consulta-margem:', error);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Error calling proxy consulta-margem:', data);
+      return {
+        sucesso: false,
+        mensagem: data.mensagem || data.error || 'Erro ao consultar margem',
+        dados: null
+      };
+    }
+
+    return data as ConsultaResult;
+  } catch (err) {
+    console.error('Exception calling proxy consulta-margem:', err);
     return {
       sucesso: false,
-      mensagem: error.message || 'Erro ao consultar margem',
+      mensagem: 'Erro de conexão com o proxy local. Verifique se o servidor está rodando na porta 3001.',
       dados: null
     };
   }
-
-  return data as ConsultaResult;
 }
