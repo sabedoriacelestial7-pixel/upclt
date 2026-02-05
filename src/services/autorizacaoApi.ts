@@ -59,7 +59,7 @@ export async function solicitarAutorizacao(
     console.error('Exception calling proxy facta-autorizar:', err);
     return {
       sucesso: false,
-      mensagem: 'Erro de conexão com o proxy local. Verifique se o servidor está rodando na porta 3001.'
+      mensagem: 'Erro de conexão com o servidor. Verifique se o túnel Cloudflare está ativo.'
     };
   }
 }
@@ -104,7 +104,7 @@ export async function verificarAutorizacao(
     console.error('Exception calling proxy facta-consultar-autorizado:', err);
     return {
       sucesso: false,
-      mensagem: 'Erro de conexão com o proxy local. Verifique se o servidor está rodando na porta 3001.',
+      mensagem: 'Erro de conexão com o servidor. Verifique se o túnel Cloudflare está ativo.',
       status: 'error',
       dados: null
     };
