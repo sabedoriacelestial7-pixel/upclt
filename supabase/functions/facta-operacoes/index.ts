@@ -14,97 +14,166 @@ const PROXY_URL = "https://mysql-metallica-solving-lined.trycloudflare.com";
 let tokenCache: { token: string; expira: Date } | null = null;
 
 async function getFactaToken(): Promise<string> {
+  console.log("=== INÍCIO OBTENÇÃO TOKEN ===");
+  
   if (tokenCache && new Date() < tokenCache.expira) {
-    console.log("Using cached Facta token");
+    console.log("✓ Usando token em cache");
     return tokenCache.token;
   }
 
   const authBasic = Deno.env.get('FACTA_AUTH_BASIC');
   if (!authBasic) {
-    throw new Error("FACTA_AUTH_BASIC not configured");
+    throw new Error("FACTA_AUTH_BASIC não configurado");
   }
 
-  console.log("Fetching new Facta token via proxy...");
+  console.log("→ Buscando novo token via proxy...");
+  console.log("→ Proxy URL:", PROXY_URL);
+  
+  const requestBody = {
+    method: 'GET',
+    url: `${FACTA_BASE_URL}/gera-token`,
+    headers: { 
+      'Authorization': `Basic ${authBasic}`,
+      'Accept': 'application/json'
+    }
+  };
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
+  const timeoutId = setTimeout(() => {
+    console.error("✗ TIMEOUT atingido (30s)");
+    controller.abort();
+  }, 30000);
   
   let response: Response;
+  
   try {
+    const startTime = Date.now();
+    console.log("→ Enviando requisição ao proxy...");
+    
     response = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        method: 'GET',
-        url: `${FACTA_BASE_URL}/gera-token`,
-        headers: { 'Authorization': `Basic ${authBasic}` }
-      }),
+      headers: { 
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; UpCLT/1.0)',
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive'
+      },
+      body: JSON.stringify(requestBody),
       signal: controller.signal
     });
+    
+    const elapsed = Date.now() - startTime;
     clearTimeout(timeoutId);
-  } catch (fetchError) {
+    
+    console.log(`✓ Resposta recebida em ${elapsed}ms`);
+    console.log("→ Status:", response.status);
+    
+  } catch (fetchError: any) {
     clearTimeout(timeoutId);
-    console.error(`Failed to connect to proxy: ${fetchError}`);
-    throw new Error("Não foi possível conectar ao servidor proxy.");
+    console.error("✗ ERRO AO CONECTAR NO PROXY:");
+    console.error("  - Nome:", fetchError.name);
+    console.error("  - Mensagem:", fetchError.message);
+    console.error("  - Stack:", fetchError.stack);
+    
+    throw new Error(`Não foi possível conectar ao servidor proxy. Verifique se o túnel Cloudflare está ativo na VPS.`);
   }
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Token request failed: ${response.status} - ${errorText.substring(0, 200)}`);
-    throw new Error(`Falha na autenticação (HTTP ${response.status})`);
+    console.error("✗ Erro na resposta do proxy:", errorText);
+    throw new Error(`Proxy retornou erro: ${response.status}`);
   }
 
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    const text = await response.text();
-    console.error(`Non-JSON response: ${text.substring(0, 200)}`);
-    throw new Error("API Facta indisponível. Tente novamente.");
+  let data;
+  try {
+    data = await response.json();
+  } catch (parseError) {
+    console.error("✗ Erro ao parsear JSON:", parseError);
+    throw new Error("Resposta inválida do proxy");
   }
 
-  const data = await response.json();
-  console.log("Token response:", JSON.stringify(data));
-  
+  console.log("→ Resposta do proxy:", JSON.stringify(data, null, 2));
+
   if (data.erro) {
-    throw new Error(data.mensagem || "Failed to get Facta token");
+    throw new Error(data.mensagem || "Erro ao obter token da Facta");
   }
 
+  if (!data.token) {
+    throw new Error("Token não retornado pela API Facta");
+  }
+
+  const expira = new Date();
+  expira.setMinutes(expira.getMinutes() + 55);
+  
   tokenCache = {
     token: data.token,
-    expira: new Date(Date.now() + 55 * 60 * 1000)
+    expira: expira
   };
 
+  console.log("✓ Token obtido e armazenado em cache");
   return data.token;
 }
 
-// Helper function to call Facta API via proxy
+// Helper function to call Facta API via proxy with detailed logs
 async function callFactaApi(method: string, path: string, token: string, params?: Record<string, any>): Promise<any> {
+  console.log(`=== CHAMADA API FACTA: ${method} ${path} ===`);
+  
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => {
+    console.error("✗ TIMEOUT atingido (30s)");
+    controller.abort();
+  }, 30000);
 
   const requestBody: any = {
     method: method,
     url: `${FACTA_BASE_URL}${path}`,
-    headers: { 'Authorization': `Bearer ${token}` }
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json'
+    }
   };
 
   // For POST requests with form data
   if (method === 'POST' && params) {
     requestBody.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     requestBody.body = params;
+    console.log("→ Params:", JSON.stringify(params));
   }
 
   try {
+    const startTime = Date.now();
+    console.log("→ Enviando requisição ao proxy...");
+    
     const response = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; UpCLT/1.0)',
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive'
+      },
       body: JSON.stringify(requestBody),
       signal: controller.signal
     });
+    
+    const elapsed = Date.now() - startTime;
     clearTimeout(timeoutId);
-    return await response.json();
-  } catch (fetchError) {
+    
+    console.log(`✓ Resposta recebida em ${elapsed}ms`);
+    console.log("→ Status:", response.status);
+    
+    const data = await response.json();
+    console.log("→ Resposta:", JSON.stringify(data));
+    
+    return data;
+    
+  } catch (fetchError: any) {
     clearTimeout(timeoutId);
-    console.error(`Failed to call Facta API: ${fetchError}`);
+    console.error("✗ ERRO AO CHAMAR API FACTA:");
+    console.error("  - Nome:", fetchError.name);
+    console.error("  - Mensagem:", fetchError.message);
     throw new Error("Erro ao comunicar com a API Facta.");
   }
 }
@@ -135,7 +204,7 @@ async function consultarOperacoesDisponiveis(token: string, params: {
     queryParams.append('prazo', params.prazo.toString());
   }
 
-  console.log(`Consulting available operations for CPF: ${params.cpf.substring(0, 3)}...`);
+  console.log(`→ Consultando operações disponíveis para CPF: ${params.cpf.substring(0, 3)}...`);
 
   return await callFactaApi('GET', `/proposta/operacoes-disponiveis?${queryParams}`, token);
 }
@@ -152,7 +221,7 @@ async function etapa1Simulador(token: string, params: {
   coeficiente: string;
   vendedor?: string;
 }) {
-  console.log(`Creating simulation for CPF: ${params.cpf.substring(0, 3)}...`);
+  console.log(`→ Criando simulação para CPF: ${params.cpf.substring(0, 3)}...`);
 
   const formParams: Record<string, string> = {
     produto: 'D',
@@ -215,7 +284,7 @@ async function etapa2DadosPessoais(token: string, params: {
   cnpjEmpregador?: string;
   dataAdmissao?: string;
 }) {
-  console.log(`Saving personal data for CPF: ${params.cpf.substring(0, 3)}...`);
+  console.log(`→ Salvando dados pessoais para CPF: ${params.cpf.substring(0, 3)}...`);
 
   const formParams: Record<string, string> = {
     id_simulador: params.idSimulador,
@@ -267,7 +336,7 @@ async function etapa3PropostaCadastro(token: string, params: {
   codigoCliente: string;
   idSimulador: string;
 }) {
-  console.log(`Creating proposal...`);
+  console.log(`→ Criando proposta...`);
 
   return await callFactaApi('POST', '/proposta/etapa3-proposta-cadastro', token, {
     codigo_cliente: params.codigoCliente,
@@ -280,7 +349,7 @@ async function enviarLinkFormalizacao(token: string, params: {
   codigoAf: string;
   tipoEnvio: 'sms' | 'whatsapp';
 }) {
-  console.log(`Sending formalization link via ${params.tipoEnvio}...`);
+  console.log(`→ Enviando link de formalização via ${params.tipoEnvio}...`);
 
   return await callFactaApi('POST', '/proposta/envio-link', token, {
     codigo_af: params.codigoAf,
@@ -305,14 +374,14 @@ async function consultarAndamentoPropostas(token: string, params: {
   if (params.dataIni) queryParams.append('data_ini', params.dataIni);
   if (params.dataFim) queryParams.append('data_fim', params.dataFim);
 
-  console.log(`Consulting proposals status...`);
+  console.log(`→ Consultando status das propostas...`);
 
   return await callFactaApi('GET', `/proposta/andamento-propostas?${queryParams}`, token);
 }
 
 // Consultar ocorrências de proposta
 async function consultarOcorrencias(token: string, codigoAf: string) {
-  console.log(`Consulting occurrences for AF: ${codigoAf}...`);
+  console.log(`→ Consultando ocorrências para AF: ${codigoAf}...`);
 
   return await callFactaApi('GET', `/proposta/consulta-ocorrencias?af=${codigoAf}`, token);
 }
@@ -352,6 +421,11 @@ serve(async (req) => {
     const userId = claimsData.claims.sub;
 
     const { operacao, ...params } = await req.json();
+    
+    console.log("\n========================================");
+    console.log(`NOVA REQUISIÇÃO - Operação: ${operacao}`);
+    console.log(`User ID: ${userId}`);
+    console.log("========================================\n");
     
     if (!operacao) {
       return new Response(
@@ -400,15 +474,19 @@ serve(async (req) => {
         );
     }
 
-    console.log(`Operation ${operacao} result:`, JSON.stringify(result));
+    console.log(`✓ Operação ${operacao} concluída com sucesso`);
 
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error("Error in facta-operacoes function:", error);
+  } catch (error: any) {
+    console.error("\n✗✗✗ ERRO GERAL ✗✗✗");
+    console.error("Nome:", error.name);
+    console.error("Mensagem:", error.message);
+    console.error("Stack:", error.stack);
+    
     const errorMessage = error instanceof Error ? error.message : "Erro interno";
     return new Response(
       JSON.stringify({ erro: true, mensagem: errorMessage }),
