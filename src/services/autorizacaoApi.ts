@@ -42,17 +42,36 @@ export async function solicitarAutorizacao(
       
       // Check for specific auth errors (401 Unauthorized)
       const errorMsg = error.message || '';
-      if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
+      const isAuthError = errorMsg.includes('401') || errorMsg.includes('Unauthorized');
+      
+      // Try to get a more specific error from the response context
+      if (error.context?.body) {
+        try {
+          const bodyData = typeof error.context.body === 'string' 
+            ? JSON.parse(error.context.body) 
+            : error.context.body;
+          if (bodyData?.mensagem) {
+            return {
+              sucesso: false,
+              mensagem: bodyData.mensagem
+            };
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      
+      if (isAuthError) {
         return {
           sucesso: false,
-          mensagem: 'Sessão expirada. Por favor, faça login novamente.'
+          mensagem: 'Sua sessão expirou. Faça login novamente para continuar.'
         };
       }
       
-      // For other errors, return a generic message
+      // For other errors, return a more descriptive message
       return {
         sucesso: false,
-        mensagem: 'Erro ao solicitar autorização. Tente novamente.'
+        mensagem: `Erro ao solicitar autorização: ${errorMsg || 'Tente novamente em alguns instantes.'}`
       };
     }
 
