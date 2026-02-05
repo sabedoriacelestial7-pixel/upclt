@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+ Sitemap: https://upclt.lovable.app/sitemap.xml

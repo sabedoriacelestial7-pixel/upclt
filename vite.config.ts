@@ -56,6 +56,13 @@ export default defineConfig(({ mode }) => ({
             form_factor: "narrow",
             label: "Tela inicial do UpCLT",
           },
+           {
+             src: "/screenshot-tablet.png",
+             sizes: "1024x768",
+             type: "image/png",
+             form_factor: "wide",
+             label: "UpCLT em tablet",
+           },
         ],
       },
       workbox: {
