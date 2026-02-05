@@ -159,6 +159,16 @@
   .animate-spin-slow {
     animation: spin 2s linear infinite;
   }
+ 
+   /* GPU acceleration utilities for smooth animations */
+   .backface-visibility-hidden {
+     -webkit-backface-visibility: hidden;
+     backface-visibility: hidden;
+   }
+ 
+   .transform-gpu {
+     transform: translateZ(0);
+   }
 }
 
 @keyframes scale-in {
