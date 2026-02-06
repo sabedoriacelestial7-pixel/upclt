@@ -13,6 +13,57 @@ const FACTA_BASE_URL = "https://webservice.facta.com.br";
 // Token cache
 let tokenCache: { token: string; expira: Date } | null = null;
 
+// Helper function to call Facta API via proxy
+async function callFactaApi(method: string, url: string, headers: Record<string, string>, body?: string): Promise<Response> {
+  const proxyUrl = Deno.env.get('FACTA_API_URL');
+  
+  if (!proxyUrl) {
+    console.log("FACTA_API_URL not configured, calling Facta directly");
+    // Call Facta directly (will only work if IP is whitelisted)
+    return await fetch(url, {
+      method,
+      headers,
+      body
+    });
+  }
+
+  console.log(`Calling Facta via proxy: ${proxyUrl}`);
+  
+  // Call via proxy
+  const proxyBody: Record<string, unknown> = {
+    method,
+    url,
+    headers
+  };
+  
+  if (body) {
+    proxyBody.body = body;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+  try {
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'UpCLT-EdgeFunction/1.0',
+        'Accept': 'application/json',
+        'Connection': 'keep-alive'
+      },
+      body: JSON.stringify(proxyBody),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error("Proxy connection error:", err);
+    throw new Error("Não foi possível conectar ao servidor proxy. Verifique se o túnel está ativo.");
+  }
+}
+
 async function getFactaToken(): Promise<string> {
   if (tokenCache && new Date() < tokenCache.expira) {
     console.log("Using cached Facta token");
@@ -26,18 +77,29 @@ async function getFactaToken(): Promise<string> {
 
   console.log("Fetching new Facta token...");
   
-  const response = await fetch(`${FACTA_BASE_URL}/gera-token`, {
-    method: 'GET',
-    headers: { 'Authorization': authBasic }
+  const response = await callFactaApi('GET', `${FACTA_BASE_URL}/gera-token`, {
+    'Authorization': authBasic
   });
 
   const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    console.error("Invalid response type:", contentType);
-    throw new Error("Servidor Facta retornou resposta inválida");
+  const responseText = await response.text();
+  
+  console.log("Token response text:", responseText.substring(0, 200));
+  
+  // Check if response is HTML (error page)
+  if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
+    console.error("Facta returned HTML instead of JSON");
+    throw new Error("Servidor Facta temporariamente indisponível");
   }
 
-  const data = await response.json();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    console.error("Failed to parse token response:", responseText.substring(0, 200));
+    throw new Error("Resposta inválida do servidor Facta");
+  }
+
   console.log("Token response:", JSON.stringify(data));
   
   if (data.erro) {
@@ -118,15 +180,16 @@ serve(async (req) => {
 
     console.log("Request body:", formData.toString());
 
-    // Call Facta authorization API
-    const factaRes = await fetch(`${FACTA_BASE_URL}/solicita-autorizacao-consulta`, {
-      method: 'POST',
-      headers: {
+    // Call Facta authorization API via proxy
+    const factaRes = await callFactaApi(
+      'POST',
+      `${FACTA_BASE_URL}/solicita-autorizacao-consulta`,
+      {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: formData.toString()
-    });
+      formData.toString()
+    );
 
     const responseText = await factaRes.text();
     console.log("Facta response:", responseText.substring(0, 500));
