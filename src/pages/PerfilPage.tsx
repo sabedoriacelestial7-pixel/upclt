@@ -11,7 +11,8 @@ import {
   Trash2,
   Moon,
   Sun,
-  Monitor
+  Monitor,
+  ShieldCheck
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { Logo } from '@/components/Logo';
@@ -41,6 +42,7 @@ import {
 
 const menuItems = [
   { icon: MessageSquare, label: 'Deixar sugestão', action: 'sugestao' },
+  { icon: ShieldCheck, label: 'Segurança de Dados', action: 'seguranca' },
   { icon: FileText, label: 'Termos de Uso', action: 'termos' },
   { icon: Shield, label: 'Política de Privacidade', action: 'privacidade' },
   { icon: CreditCard, label: 'Dados trabalhistas e financeiros', action: 'dados' },
@@ -55,21 +57,22 @@ export default function PerfilPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleMenuClick = (action: string) => {
-    if (action === 'sugestao') {
-      navigate('/sugestao');
-      return;
-    }
-    if (action === 'termos') {
-      navigate('/termos-uso');
-      return;
-    }
-    if (action === 'privacidade') {
-      navigate('/politica-privacidade');
-      return;
-    }
-    if (action === 'dados') {
-      navigate('/dados-trabalhistas');
-      return;
+    switch (action) {
+      case 'sugestao':
+        navigate('/sugestao');
+        break;
+      case 'seguranca':
+        navigate('/seguranca-dados');
+        break;
+      case 'termos':
+        navigate('/termos-uso');
+        break;
+      case 'privacidade':
+        navigate('/politica-privacidade');
+        break;
+      case 'dados':
+        navigate('/dados-trabalhistas');
+        break;
     }
   };
 
