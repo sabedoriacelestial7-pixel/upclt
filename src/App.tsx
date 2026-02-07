@@ -9,6 +9,7 @@ import { BiaChatProvider } from "@/contexts/BiaChatContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { BiaChatDrawer } from "@/components/BiaChatDrawer";
+import { BiaFAB } from "@/components/BiaFAB";
 
 import LoginPage from "@/pages/LoginPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -79,7 +80,12 @@ import { useBiaChat } from '@/contexts/BiaChatContext';
 
 function BiaGlobalDrawer() {
   const { isOpen, close } = useBiaChat();
-  return <BiaChatDrawer open={isOpen} onClose={close} />;
+  return (
+    <>
+      <BiaChatDrawer open={isOpen} onClose={close} />
+      <BiaFAB />
+    </>
+  );
 }
 
 const App = () => (
