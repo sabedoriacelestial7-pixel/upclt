@@ -206,37 +206,38 @@ export default function PropostasPage() {
           <button
             key={proposta.id}
             className={cn(
-              'w-full !bg-white rounded-xl p-4 text-left shadow-card',
+              'w-full rounded-xl p-4 text-left shadow-card',
               'hover:shadow-card-hover transition-all duration-200',
               'active:scale-[0.99] touch-manipulation'
             )}
+            style={{ backgroundColor: '#ffffff' }}
             onClick={() => navigate(`/propostas/${proposta.id}`)}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 {getStatusIcon(proposta.status_facta || proposta.status)}
                 <div>
-                  <p className="text-sm font-semibold !text-gray-900">
+                  <p className="text-sm font-semibold" style={{ color: '#111827' }}>
                     {proposta.banco_nome}
                   </p>
-                  <p className="text-xs !text-gray-500">
+                  <p className="text-xs" style={{ color: '#6b7280' }}>
                     {formatarData(proposta.created_at)}
                   </p>
                 </div>
               </div>
-              <ChevronRight size={20} className="!text-gray-400" />
+              <ChevronRight size={20} style={{ color: '#9ca3af' }} />
             </div>
 
-            <div className="mt-3 pt-3 border-t !border-gray-200 grid grid-cols-2 gap-2">
+            <div className="mt-3 pt-3 grid grid-cols-2 gap-2" style={{ borderTopWidth: '1px', borderTopColor: '#e5e7eb' }}>
               <div>
-                <p className="text-xs !text-gray-500">Valor</p>
-                <p className="text-sm font-semibold !text-gray-900">
+                <p className="text-xs" style={{ color: '#6b7280' }}>Valor</p>
+                <p className="text-sm font-semibold" style={{ color: '#111827' }}>
                   {formatarMoeda(proposta.valor_operacao)}
                 </p>
               </div>
               <div>
-                <p className="text-xs !text-gray-500">Parcelas</p>
-                <p className="text-sm font-semibold !text-gray-900">
+                <p className="text-xs" style={{ color: '#6b7280' }}>Parcelas</p>
+                <p className="text-sm font-semibold" style={{ color: '#111827' }}>
                   {proposta.parcelas}x de {formatarMoeda(proposta.valor_parcela)}
                 </p>
               </div>
