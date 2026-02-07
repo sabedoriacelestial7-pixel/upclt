@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { BiaChatProvider } from "@/contexts/BiaChatContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { BiaChatDrawer } from "@/components/BiaChatDrawer";
@@ -90,15 +91,17 @@ function BiaGlobalDrawer() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AppProvider>
-        <TooltipProvider>
-          <BiaChatProvider>
-            <AppContent />
-          </BiaChatProvider>
-        </TooltipProvider>
-      </AppProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppProvider>
+          <TooltipProvider>
+            <BiaChatProvider>
+              <AppContent />
+            </BiaChatProvider>
+          </TooltipProvider>
+        </AppProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
