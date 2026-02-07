@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.facta-consultar-autorizado]
 verify_jwt = false
+
+[functions.bia-chat]
+verify_jwt = false
