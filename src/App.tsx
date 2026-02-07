@@ -39,6 +39,7 @@ const PoliticaPrivacidadePage = lazy(() => import('@/pages/PoliticaPrivacidadePa
 const AjudaPage = lazy(() => import('@/pages/AjudaPage'));
 const InstallPage = lazy(() => import('@/pages/InstallPage'));
 const SegurancaDadosPage = lazy(() => import('@/pages/SegurancaDadosPage'));
+const ExcluirContaPage = lazy(() => import('@/pages/ExcluirContaPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -96,6 +97,7 @@ function AppContent() {
           <Route path="/termos-uso" element={<TermosUsoPage />} />
           <Route path="/politica-privacidade" element={<PoliticaPrivacidadePage />} />
           <Route path="/seguranca-dados" element={<SegurancaDadosPage />} />
+          <Route path="/excluir-conta" element={<ExcluirContaPage />} />
           <Route path="/ajuda" element={<ProtectedRoute><AjudaPage /></ProtectedRoute>} />
 
           {/* Catch-all */}
