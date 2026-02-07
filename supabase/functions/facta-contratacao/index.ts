@@ -379,7 +379,7 @@ serve(async (req) => {
     // Facta exige dados do cônjuge - envia dados do próprio cliente como fallback
     dadosFormData.cpf_conjuge = params.cpf;
     dadosFormData.nome_conjuge = params.nome;
-    dadosFormData.data_nascimento_conjuge = params.dataNascimento;
+    dadosFormData.nascimento_conjuge = params.dataNascimento;
 
     dadosFormData.nome_mae = params.nomeMae;
     dadosFormData.nome_pai = params.nomePai || 'NAO DECLARADO';
