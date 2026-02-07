@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
- import { PageTransition } from '@/components/PageTransition';
+import { PageTransition } from '@/components/PageTransition';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, ChevronRight, Users, User } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { ProposalCardSkeleton } from '@/components/SkeletonLoaders';
 import { EmptyState } from '@/components/EmptyState';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -34,7 +36,7 @@ export default function PropostasPage() {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'personal' | 'all'>('personal');
 
-  const carregarPropostas = async (atualizar = false) => {
+  const carregarPropostas = useCallback(async (atualizar = false) => {
     try {
       if (atualizar) {
         setRefreshing(true);
@@ -50,6 +52,7 @@ export default function PropostasPage() {
             setPropostas(result.propostas);
           }
         }
+        toast.success('Lista atualizada!');
       } else {
         setLoading(true);
         
@@ -75,7 +78,12 @@ export default function PropostasPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [isAdmin, viewMode]);
+
+  // Pull-to-refresh handler
+  const handlePullRefresh = useCallback(async () => {
+    await carregarPropostas(true);
+  }, [carregarPropostas]);
 
   useEffect(() => {
     if (isLoggedIn && !adminLoading) {
@@ -262,11 +270,16 @@ export default function PropostasPage() {
   );
 
   return (
-     <PageTransition className="min-h-screen bg-background pb-24">
-      <main className={cn(
-        "px-4 pt-[calc(env(safe-area-inset-top)+1rem)]",
-        isAdmin && viewMode === 'all' ? "max-w-4xl mx-auto" : "max-w-md mx-auto"
-      )}>
+    <PageTransition className="min-h-screen bg-background pb-24">
+      <PullToRefresh 
+        onRefresh={handlePullRefresh} 
+        disabled={loading || adminLoading}
+        className="min-h-screen"
+      >
+        <main className={cn(
+          "px-4 pt-[calc(env(safe-area-inset-top)+1rem)]",
+          isAdmin && viewMode === 'all' ? "max-w-4xl mx-auto" : "max-w-md mx-auto"
+        )}>
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-1">
@@ -347,9 +360,10 @@ export default function PropostasPage() {
         {propostas.length > 0 && (
           isAdmin && viewMode === 'all' ? <AdminTableView /> : <UserCardView />
         )}
-      </main>
+        </main>
+      </PullToRefresh>
 
       <BottomNav />
-     </PageTransition>
+    </PageTransition>
   );
 }
