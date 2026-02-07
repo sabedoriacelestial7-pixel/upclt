@@ -352,6 +352,36 @@ serve(async (req) => {
       );
     }
     
+    // Consultar código do órgão emissor na Facta
+    let orgaoEmissorCodigo = params.orgaoEmissor;
+    try {
+      const orgaoResponse = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'GET',
+          url: `${FACTA_BASE_URL}/proposta-combos/orgao-emissor`,
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      });
+      const orgaoData = await orgaoResponse.json();
+      console.log("Orgao emissor combos:", JSON.stringify(orgaoData).substring(0, 500));
+      
+      if (orgaoData.orgao_emissor) {
+        // Procura o código correspondente à sigla informada
+        const entries = Object.entries(orgaoData.orgao_emissor);
+        const match = entries.find(([_, nome]) => 
+          (nome as string).toUpperCase().includes(params.orgaoEmissor.toUpperCase())
+        );
+        if (match) {
+          orgaoEmissorCodigo = match[0];
+          console.log(`Mapped orgao emissor "${params.orgaoEmissor}" -> code "${orgaoEmissorCodigo}"`);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to lookup orgao emissor:", e);
+    }
+
     const dadosFormData: Record<string, string> = {
       id_simulador: idSimulador,
       cpf: params.cpf,
@@ -361,7 +391,7 @@ serve(async (req) => {
       data_nascimento: params.dataNascimento,
       rg: params.rg,
       estado_rg: params.estadoRg,
-      orgao_emissor: params.orgaoEmissor,
+      orgao_emissor: orgaoEmissorCodigo,
       data_expedicao: params.dataExpedicao,
       estado_natural: params.estadoNatural,
       cidade_natural: cidadeNaturalCodigoFacta,
