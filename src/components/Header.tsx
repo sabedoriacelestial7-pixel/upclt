@@ -1,6 +1,7 @@
 import { ChevronLeft, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useBiaChat } from '@/contexts/BiaChatContext';
 
 interface HeaderProps {
   title?: string;
@@ -9,7 +10,7 @@ interface HeaderProps {
   variant?: 'light' | 'transparent';
   className?: string;
   rightElement?: React.ReactNode;
-  progress?: number; // 0 to 100
+  progress?: number;
 }
 
 export function Header({ 
@@ -22,6 +23,7 @@ export function Header({
   progress 
 }: HeaderProps) {
   const navigate = useNavigate();
+  const { open: openBia } = useBiaChat();
   const isLight = variant === 'light';
 
   return (
@@ -33,7 +35,6 @@ export function Header({
       )}
       role="banner"
     >
-      {/* Progress bar */}
       {progress !== undefined && (
         <div 
           className="progress-bar" 
@@ -80,7 +81,8 @@ export function Header({
         <div className="flex items-center gap-1 min-w-[48px] justify-end">
           {showChat && (
             <button
-              aria-label="Abrir chat de suporte"
+              onClick={openBia}
+              aria-label="Abrir chat com a Bia"
               className={cn(
                 'p-2 rounded-full transition-colors active:scale-95 touch-manipulation',
                 'min-w-[48px] min-h-[48px] flex items-center justify-center',
