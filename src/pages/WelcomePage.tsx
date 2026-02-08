@@ -127,7 +127,7 @@ export default function WelcomePage() {
               animation: showSplash ? 'none' : 'fade-in 0.5s ease-out 0.5s both'
             }}
           >
-            Compare e contrate o empréstimo consignado CLT mais barato do Brasil
+            Contrate o empréstimo consignado CLT mais barato do Brasil
           </h1>
 
           {/* CTA Buttons */}
