@@ -178,6 +178,13 @@ export default function ConsultaPage() {
           }
         }
 
+        // Show loading screen with bank carousel before navigating
+        setStep('loading');
+        setLoadingMessage('Estamos analisando as melhores condições para você...');
+
+        // Wait to show the loading animation with bank logos
+        await new Promise(resolve => setTimeout(resolve, 4000));
+
         setConsulta(result.dados);
         navigate('/resultado');
         return;
