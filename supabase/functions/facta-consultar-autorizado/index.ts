@@ -62,7 +62,7 @@ async function callFactaApi(method: string, url: string, headers: Record<string,
   }
 }
 
-async function getFactaToken(): Promise<string> {
+async function getFactaToken(retries = 3): Promise<string> {
   if (tokenCache && new Date() < tokenCache.expira) {
     console.log("Using cached Facta token");
     return tokenCache.token;
@@ -75,42 +75,55 @@ async function getFactaToken(): Promise<string> {
 
   console.log("Fetching new Facta token...");
   
-  // Garantir que o header tenha o prefixo "Basic "
   const authHeader = authBasic.startsWith('Basic ') ? authBasic : `Basic ${authBasic}`;
   
-  const response = await callFactaApi('GET', `${FACTA_BASE_URL}/gera-token`, {
-    'Authorization': authHeader
-  });
+  for (let attempt = 0; attempt < retries; attempt++) {
+    if (attempt > 0) {
+      console.log(`Token retry attempt ${attempt + 1}/${retries}, waiting ${attempt * 2}s...`);
+      await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+    }
 
-  const responseText = await response.text();
-  console.log("Token response text:", responseText.substring(0, 200));
+    const response = await callFactaApi('GET', `${FACTA_BASE_URL}/gera-token`, {
+      'Authorization': authHeader
+    });
 
-  if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
-    console.error("Facta returned HTML instead of JSON");
-    throw new Error("Servidor Facta temporariamente indisponível");
+    const responseText = await response.text();
+    console.log("Token response text:", responseText.substring(0, 200));
+
+    if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html')) {
+      console.error(`Attempt ${attempt + 1}: Cloudflare returned HTML, retrying...`);
+      if (attempt === retries - 1) {
+        throw new Error("Servidor temporariamente indisponível. Tente novamente em alguns segundos.");
+      }
+      continue;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      console.error("Failed to parse token response:", responseText.substring(0, 200));
+      throw new Error("Resposta inválida do servidor Facta");
+    }
+
+    console.log("Token response:", JSON.stringify(data));
+    
+    if (data.erro) {
+      throw new Error(data.mensagem || "Failed to get Facta token");
+    }
+
+    tokenCache = {
+      token: data.token,
+      expira: new Date(Date.now() + 55 * 60 * 1000)
+    };
+
+    return data.token;
   }
 
-  let data;
-  try {
-    data = JSON.parse(responseText);
-  } catch {
-    console.error("Failed to parse token response:", responseText.substring(0, 200));
-    throw new Error("Resposta inválida do servidor Facta");
-  }
-
-  console.log("Token response:", JSON.stringify(data));
-  
-  if (data.erro) {
-    throw new Error(data.mensagem || "Failed to get Facta token");
-  }
-
-  tokenCache = {
-    token: data.token,
-    expira: new Date(Date.now() + 55 * 60 * 1000)
-  };
-
-  return data.token;
+  throw new Error("Servidor temporariamente indisponível após múltiplas tentativas.");
 }
+
+
 
 // Helper function to parse Brazilian number format (e.g., "891,65" -> 891.65)
 function parseValor(valor: string | number | undefined): number {
