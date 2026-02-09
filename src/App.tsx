@@ -17,6 +17,8 @@ const BiaChatDrawer = lazy(() => import('@/components/BiaChatDrawer').then(m => 
 const BiaFAB = lazy(() => import('@/components/BiaFAB').then(m => ({ default: m.BiaFAB })));
 const NotificationDrawer = lazy(() => import('@/components/NotificationDrawer').then(m => ({ default: m.NotificationDrawer })));
 
+import { SupportBanner } from '@/components/SupportBanner';
+
 // Lazy loaded pages - reduces initial bundle size significantly
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
@@ -66,6 +68,7 @@ function AppContent() {
   return (
     <BrowserRouter>
       <OfflineBanner />
+      <SupportBanner />
       <Toaster />
       <Sonner />
       <BiaGlobalDrawer />
