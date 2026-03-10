@@ -377,7 +377,7 @@ export default function ConsultaLotePage() {
         )}
 
         {/* Results Table */}
-        {resultados.length > 0 && (
+        {resultadosFiltrados.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Resultados</CardTitle>
