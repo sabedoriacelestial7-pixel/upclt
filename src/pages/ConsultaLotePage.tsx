@@ -43,20 +43,29 @@ interface Resumo {
   erros: number;
 }
 
-function parseCpfsFromText(text: string): string[] {
-  const cpfs: string[] = [];
+interface ParsedCpfEntry {
+  cpf: string;
+  telefone?: string;
+}
+
+function parseCpfsFromText(text: string): ParsedCpfEntry[] {
+  const entries: ParsedCpfEntry[] = [];
+  const seenCpfs = new Set<string>();
   const lines = text.split(/[\r\n]+/).filter(l => l.trim());
 
-  // Try to detect header row and CPF column index
+  // Try to detect header row and column indices
   let cpfColIndex = -1;
+  let telColIndex = -1;
   const firstLine = lines[0]?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
   const firstParts = firstLine.split(/[;,\t]/);
 
   for (let i = 0; i < firstParts.length; i++) {
     const col = firstParts[i].trim();
-    if (col === 'cpf' || col.startsWith('cpf') || col.includes('cpf')) {
+    if (cpfColIndex === -1 && (col === 'cpf' || col.startsWith('cpf') || col.includes('cpf'))) {
       cpfColIndex = i;
-      break;
+    }
+    if (telColIndex === -1 && (col.includes('telefone') || col.includes('celular') || col.includes('fone') || col.includes('tel'))) {
+      telColIndex = i;
     }
   }
 
@@ -66,6 +75,8 @@ function parseCpfsFromText(text: string): string[] {
     const line = lines[li];
     const parts = line.split(/[;,\t]/);
 
+    let foundCpf: string | null = null;
+
     // If we know the CPF column, use it; otherwise scan all columns
     const columnsToScan = cpfColIndex >= 0 ? [parts[cpfColIndex]] : parts;
 
@@ -73,36 +84,48 @@ function parseCpfsFromText(text: string): string[] {
       if (!part) continue;
       const cleaned = part.trim().replace(/[\.\-\/\s]/g, '').replace(/\D/g, '');
       if (cleaned.length === 11) {
-        cpfs.push(cleaned);
+        foundCpf = cleaned;
         break;
       }
-      // Handle CPFs stored as numbers (may lose leading zeros)
       if (/^\d{9,11}$/.test(cleaned)) {
         const padded = cleaned.padStart(11, '0');
         if (padded.length === 11) {
-          cpfs.push(padded);
+          foundCpf = padded;
           break;
         }
       }
     }
+
+    if (foundCpf && !seenCpfs.has(foundCpf)) {
+      seenCpfs.add(foundCpf);
+      const telefone = telColIndex >= 0 ? parts[telColIndex]?.trim() || undefined : undefined;
+      entries.push({ cpf: foundCpf, telefone });
+    }
   }
 
-  // Also extract CPFs from free text (regex pattern for formatted CPFs)
-  if (cpfs.length === 0) {
+  // Fallback: extract CPFs from free text
+  if (entries.length === 0) {
     const allText = text.replace(/[\r\n]+/g, ' ');
     const cpfPattern = /\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[\-\s]?\d{2}/g;
     const matches = allText.match(cpfPattern) || [];
     for (const m of matches) {
       const cleaned = m.replace(/\D/g, '');
-      if (cleaned.length === 11) cpfs.push(cleaned);
+      if (cleaned.length === 11 && !seenCpfs.has(cleaned)) {
+        seenCpfs.add(cleaned);
+        entries.push({ cpf: cleaned });
+      }
     }
-    // Also try raw 11-digit sequences
     const rawPattern = /\b\d{11}\b/g;
     const rawMatches = allText.match(rawPattern) || [];
-    for (const m of rawMatches) cpfs.push(m);
+    for (const m of rawMatches) {
+      if (!seenCpfs.has(m)) {
+        seenCpfs.add(m);
+        entries.push({ cpf: m });
+      }
+    }
   }
 
-  return [...new Set(cpfs)];
+  return entries;
 }
 
 function formatCpf(cpf: string): string {
@@ -153,7 +176,7 @@ const statusConfig = {
 };
 
 export default function ConsultaLotePage() {
-  const [cpfs, setCpfs] = useState<string[]>([]);
+  const [entries, setEntries] = useState<ParsedCpfEntry[]>([]);
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState<ResultadoLote[]>([]);
@@ -164,12 +187,19 @@ export default function ConsultaLotePage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const cpfs = useMemo(() => entries.map(e => e.cpf), [entries]);
+  const telefoneMap = useMemo(() => {
+    const map = new Map<string, string>();
+    entries.forEach(e => { if (e.telefone) map.set(e.cpf, e.telefone); });
+    return map;
+  }, [entries]);
+
   const resultadosFiltrados = useMemo(() => {
     if (filtroStatus === 'todos') return resultados;
     return resultados.filter(r => r.status === filtroStatus);
   }, [resultados, filtroStatus]);
 
-  const loadCpfs = useCallback((parsed: string[], source: string) => {
+  const loadEntries = useCallback((parsed: ParsedCpfEntry[], source: string) => {
     if (parsed.length === 0) {
       toast({ title: 'Nenhum CPF encontrado', description: 'Nenhum CPF válido (11 dígitos) foi detectado.', variant: 'destructive' });
       return;
@@ -178,10 +208,12 @@ export default function ConsultaLotePage() {
       toast({ title: 'Limite excedido', description: 'Máximo de 500 CPFs por lote.', variant: 'destructive' });
       return;
     }
-    setCpfs(parsed);
+    setEntries(parsed);
     setResultados([]);
     setResumo(null);
-    toast({ title: `${parsed.length} CPFs carregados`, description: source });
+    const telCount = parsed.filter(p => p.telefone).length;
+    const desc = telCount > 0 ? `${source} (${telCount} telefones detectados)` : source;
+    toast({ title: `${parsed.length} CPFs carregados`, description: desc });
   }, [toast]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,19 +224,19 @@ export default function ConsultaLotePage() {
     reader.onload = (event) => {
       const text = event.target?.result as string;
       const parsed = parseCpfsFromText(text);
-      loadCpfs(parsed, `Arquivo: ${file.name}`);
+      loadEntries(parsed, `Arquivo: ${file.name}`);
       setFileName(file.name);
     };
     reader.readAsText(file);
     e.target.value = '';
-  }, [loadCpfs]);
+  }, [loadEntries]);
 
   const handleTextSubmit = useCallback(() => {
     if (!textInput.trim()) return;
     const parsed = parseCpfsFromText(textInput);
-    loadCpfs(parsed, 'Colado manualmente');
+    loadEntries(parsed, 'Colado manualmente');
     setFileName('');
-  }, [textInput, loadCpfs]);
+  }, [textInput, loadEntries]);
 
   const resultadosRef = useCallback((node: HTMLDivElement | null) => {
     if (node && resultados.length > 0 && !loading) {
@@ -234,7 +266,12 @@ export default function ConsultaLotePage() {
         if (error) throw error;
         if (data.erro) throw new Error(data.mensagem);
 
-        allResults.push(...data.resultados);
+        // Pre-fill telefone from uploaded data
+        const resultsWithTel = (data.resultados as ResultadoLote[]).map(r => ({
+          ...r,
+          telefone: r.telefone || telefoneMap.get(r.cpf) || ''
+        }));
+        allResults.push(...resultsWithTel);
       }
 
       setResultados(allResults);
