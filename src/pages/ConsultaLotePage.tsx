@@ -187,6 +187,12 @@ export default function ConsultaLotePage() {
     setFileName('');
   }, [textInput, loadCpfs]);
 
+  const resultadosRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && resultados.length > 0 && !loading) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [resultados.length, loading]);
+
   const handleConsultar = async () => {
     if (cpfs.length === 0) return;
     setLoading(true);
@@ -195,7 +201,6 @@ export default function ConsultaLotePage() {
     setResumo(null);
 
     try {
-      // Split into batches of 50 to avoid timeout
       const BATCH_SIZE = 50;
       const allResults: ResultadoLote[] = [];
 
