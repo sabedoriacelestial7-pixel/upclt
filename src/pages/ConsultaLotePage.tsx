@@ -109,14 +109,16 @@ function formatCurrency(value: number): string {
 }
 
 function exportCsv(resultados: ResultadoLote[]) {
-  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Margem Disponível', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
+  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Margem (Parcela Máx)', 'Valor Liberado (36x)', 'Parcelas', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
   const rows = resultados.map(r => [
     formatCpf(r.cpf),
     r.status,
     r.dados?.nome || '',
     r.dados?.nomeEmpregador || '',
     r.dados?.cnpjEmpregador || '',
-    r.dados?.valorMargemDisponivel?.toString().replace('.', ',') || '',
+    r.dados?.valorMargemDisponivel ? (r.dados.valorMargemDisponivel / 100).toFixed(2).replace('.', ',') : '',
+    r.dados?.valorLiberado ? (r.dados.valorLiberado / 100).toFixed(2).replace('.', ',') : '',
+    r.dados?.parcelas?.toString() || '',
     r.dados?.valorBaseMargem?.toString().replace('.', ',') || '',
     r.dados?.valorTotalVencimentos?.toString().replace('.', ',') || '',
     r.dados?.dataAdmissao || '',
