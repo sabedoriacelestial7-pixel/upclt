@@ -19,6 +19,9 @@ interface ResultadoLote {
     valorMargemDisponivel: number;
     valorBaseMargem: number;
     valorTotalVencimentos: number;
+    valorLiberado: number;
+    valorParcela: number;
+    parcelas: number;
     nomeEmpregador: string;
     cnpjEmpregador: string;
     dataAdmissao: string;
@@ -106,14 +109,16 @@ function formatCurrency(value: number): string {
 }
 
 function exportCsv(resultados: ResultadoLote[]) {
-  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Margem Disponível', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
+  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Margem (Parcela Máx)', 'Valor Liberado (36x)', 'Parcelas', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
   const rows = resultados.map(r => [
     formatCpf(r.cpf),
     r.status,
     r.dados?.nome || '',
     r.dados?.nomeEmpregador || '',
     r.dados?.cnpjEmpregador || '',
-    r.dados?.valorMargemDisponivel?.toString().replace('.', ',') || '',
+    r.dados?.valorParcela?.toFixed(2).replace('.', ',') || '',
+    r.dados?.valorLiberado?.toFixed(2).replace('.', ',') || '',
+    r.dados?.parcelas?.toString() || '',
     r.dados?.valorBaseMargem?.toString().replace('.', ',') || '',
     r.dados?.valorTotalVencimentos?.toString().replace('.', ',') || '',
     r.dados?.dataAdmissao || '',
@@ -391,7 +396,9 @@ export default function ConsultaLotePage() {
                       <th className="text-left p-3 font-medium">Status</th>
                       <th className="text-left p-3 font-medium">Nome</th>
                       <th className="text-left p-3 font-medium">Empregador</th>
-                      <th className="text-right p-3 font-medium">Margem</th>
+                      <th className="text-right p-3 font-medium">Margem (Parcela)</th>
+                      <th className="text-right p-3 font-medium">Valor Liberado</th>
+                      <th className="text-center p-3 font-medium">Parcelas</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -410,7 +417,13 @@ export default function ConsultaLotePage() {
                           <td className="p-3 truncate max-w-[200px]">{r.dados?.nome || '-'}</td>
                           <td className="p-3 truncate max-w-[200px]">{r.dados?.nomeEmpregador || '-'}</td>
                           <td className="p-3 text-right font-medium">
-                            {r.dados?.valorMargemDisponivel ? formatCurrency(r.dados.valorMargemDisponivel) : '-'}
+                            {r.dados?.valorParcela ? formatCurrency(r.dados.valorParcela) : '-'}
+                          </td>
+                          <td className="p-3 text-right font-medium text-primary">
+                            {r.dados?.valorLiberado ? formatCurrency(r.dados.valorLiberado) : '-'}
+                          </td>
+                          <td className="p-3 text-center text-muted-foreground">
+                            {r.dados?.parcelas ? `${r.dados.parcelas}x` : '-'}
                           </td>
                         </tr>
                       );
