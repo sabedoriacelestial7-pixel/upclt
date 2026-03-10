@@ -67,9 +67,18 @@ const COEFICIENTES: Record<number, number> = {
   20: 0.112470, 24: 0.102963, 30: 0.083036, 36: 0.077260,
 };
 
+// Prioridade de prazos: maior primeiro
+const PRAZOS_PRIORIDADE = [36, 24, 12, 6];
+
 function calcularValorLiberado(valorParcela: number, parcelas: number = 36): number {
   const coef = COEFICIENTES[parcelas] || COEFICIENTES[36];
   return Math.round((valorParcela / coef) * 100) / 100;
+}
+
+// Converte centavos para reais e aplica 97% da margem (regra de parcela máxima)
+function calcularParcelaMaxima(margemCentavos: number): number {
+  const margemReais = margemCentavos / 100;
+  return Math.floor(margemReais * 0.97 * 10) / 10;
 }
 
 serve(async (req) => {
@@ -149,10 +158,15 @@ serve(async (req) => {
         const t = factaData.dados[0];
         const elegivel = t.elegivel === "S" || t.elegivel === "SIM" || t.elegivel === "1" || t.elegivel === true;
 
-        const margem = parseValor(t.valorMargemDisponivel);
-        // valorMargemDisponivel da API = valor máximo da parcela
-        const valorParcela36 = margem > 0 ? Math.round(margem * 100) / 100 : 0;
-        const valorLiberado36 = margem > 0 ? calcularValorLiberado(margem, 36) : 0;
+        const margemRaw = parseValor(t.valorMargemDisponivel);
+        // Converter centavos → reais e aplicar 97%
+        const parcelaMaxima = margemRaw > 0 ? calcularParcelaMaxima(margemRaw) : 0;
+        
+        // Usar maior prazo disponível: 36x → 24x → 12x → 6x
+        let prazoEscolhido = PRAZOS_PRIORIDADE[0];
+        // (todos os prazos estão nos coeficientes, usar 36x por padrão)
+        
+        const valorLiberado = parcelaMaxima > 0 ? calcularValorLiberado(parcelaMaxima, prazoEscolhido) : 0;
 
         resultados.push({
           cpf: cpfLimpo,
@@ -161,12 +175,12 @@ serve(async (req) => {
           dados: {
             nome: t.nome,
             matricula: t.matricula,
-            valorMargemDisponivel: margem,
-            valorBaseMargem: parseValor(t.valorBaseMargem),
-            valorTotalVencimentos: parseValor(t.valorTotalVencimentos),
-            valorLiberado: valorLiberado36,
-            valorParcela: valorParcela36,
-            parcelas: 36,
+            valorMargemDisponivel: Math.round((margemRaw / 100) * 100) / 100,
+            valorBaseMargem: Math.round((parseValor(t.valorBaseMargem) / 100) * 100) / 100,
+            valorTotalVencimentos: Math.round((parseValor(t.valorTotalVencimentos) / 100) * 100) / 100,
+            valorLiberado,
+            valorParcela: parcelaMaxima,
+            parcelas: prazoEscolhido,
             nomeEmpregador: t.nomeEmpregador,
             cnpjEmpregador: t.numeroInscricaoEmpregador,
             dataAdmissao: t.dataAdmissao,
