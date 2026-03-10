@@ -67,9 +67,18 @@ const COEFICIENTES: Record<number, number> = {
   20: 0.112470, 24: 0.102963, 30: 0.083036, 36: 0.077260,
 };
 
+// Prioridade de prazos: maior primeiro
+const PRAZOS_PRIORIDADE = [36, 24, 12, 6];
+
 function calcularValorLiberado(valorParcela: number, parcelas: number = 36): number {
   const coef = COEFICIENTES[parcelas] || COEFICIENTES[36];
   return Math.round((valorParcela / coef) * 100) / 100;
+}
+
+// Converte centavos para reais e aplica 97% da margem (regra de parcela máxima)
+function calcularParcelaMaxima(margemCentavos: number): number {
+  const margemReais = margemCentavos / 100;
+  return Math.floor(margemReais * 0.97 * 10) / 10;
 }
 
 serve(async (req) => {
