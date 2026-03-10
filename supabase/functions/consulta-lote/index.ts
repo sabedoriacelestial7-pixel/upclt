@@ -138,10 +138,11 @@ async function consultarSimulacaoReal(
       }
     );
 
-    console.log(`→ Resultado simulação: erro=${result.erro}, dados=${Array.isArray(result.dados) ? result.dados.length + ' tabelas' : 'null'}, msg=${result.mensagem || ''}`);
-
-    if (result.erro || !result.dados || !Array.isArray(result.dados) || result.dados.length === 0) {
-      console.log(`Simulação sem resultado para CPF ${cpf.substring(0, 3)}...: ${result.mensagem || JSON.stringify(result)}`);
+    // A API retorna os dados no campo 'tabelas' ou 'dados'
+    const tabelas = result.tabelas || result.dados;
+    
+    if (result.erro || !tabelas || !Array.isArray(tabelas) || tabelas.length === 0) {
+      console.log(`Simulação sem resultado para CPF ${cpf.substring(0, 3)}...: ${result.mensagem || 'sem tabelas'}`);
       return null;
     }
 
