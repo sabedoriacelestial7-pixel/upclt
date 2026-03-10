@@ -42,6 +42,7 @@ const AjudaPage = lazy(() => import('@/pages/AjudaPage'));
 const InstallPage = lazy(() => import('@/pages/InstallPage'));
 const SegurancaDadosPage = lazy(() => import('@/pages/SegurancaDadosPage'));
 const ExcluirContaPage = lazy(() => import('@/pages/ExcluirContaPage'));
+const ConsultaLotePage = lazy(() => import('@/pages/ConsultaLotePage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -102,6 +103,7 @@ function AppContent() {
           <Route path="/seguranca-dados" element={<SegurancaDadosPage />} />
           <Route path="/excluir-conta" element={<ExcluirContaPage />} />
           <Route path="/ajuda" element={<ProtectedRoute><AjudaPage /></ProtectedRoute>} />
+          <Route path="/consulta-lote" element={<ProtectedRoute><ConsultaLotePage /></ProtectedRoute>} />
 
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />

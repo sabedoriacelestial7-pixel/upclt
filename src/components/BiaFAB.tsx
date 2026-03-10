@@ -13,7 +13,7 @@ export function BiaFAB() {
   const constraintsRef = useRef<HTMLDivElement>(null);
   const [showHint, setShowHint] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
-  const dragTimeout = useRef<NodeJS.Timeout>();
+  const dragTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const shouldHide = HIDDEN_ROUTES.some(route => location.pathname.startsWith(route)) || isOpen;
 

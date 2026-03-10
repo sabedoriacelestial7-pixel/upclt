@@ -1,0 +1,340 @@
+import { useState, useCallback } from 'react';
+import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle, Search, Loader2, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { Header } from '@/components/Header';
+
+interface ResultadoLote {
+  cpf: string;
+  status: 'elegivel' | 'inelegivel' | 'nao_encontrado' | 'erro';
+  mensagem: string;
+  dados: {
+    nome: string;
+    matricula: string;
+    valorMargemDisponivel: number;
+    valorBaseMargem: number;
+    valorTotalVencimentos: number;
+    nomeEmpregador: string;
+    cnpjEmpregador: string;
+    dataAdmissao: string;
+    dataNascimento: string;
+    elegivel: boolean;
+  } | null;
+}
+
+interface Resumo {
+  total: number;
+  elegiveis: number;
+  inelegiveis: number;
+  naoEncontrados: number;
+  erros: number;
+}
+
+function parseCsvCpfs(text: string): string[] {
+  const lines = text.split(/[\r\n]+/).filter(l => l.trim());
+  const cpfs: string[] = [];
+  for (const line of lines) {
+    // Try to extract CPF from each line (first column or whole line)
+    const parts = line.split(/[;,\t]/);
+    for (const part of parts) {
+      const cleaned = part.trim().replace(/\D/g, '');
+      if (cleaned.length === 11) {
+        cpfs.push(cleaned);
+        break; // Take first valid CPF per line
+      }
+    }
+  }
+  return [...new Set(cpfs)]; // Remove duplicates
+}
+
+function formatCpf(cpf: string): string {
+  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function exportCsv(resultados: ResultadoLote[]) {
+  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Margem Disponível', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
+  const rows = resultados.map(r => [
+    formatCpf(r.cpf),
+    r.status,
+    r.dados?.nome || '',
+    r.dados?.nomeEmpregador || '',
+    r.dados?.cnpjEmpregador || '',
+    r.dados?.valorMargemDisponivel?.toString().replace('.', ',') || '',
+    r.dados?.valorBaseMargem?.toString().replace('.', ',') || '',
+    r.dados?.valorTotalVencimentos?.toString().replace('.', ',') || '',
+    r.dados?.dataAdmissao || '',
+    r.dados?.dataNascimento || '',
+    r.dados?.matricula || '',
+    r.mensagem
+  ]);
+
+  const csvContent = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `consulta-lote-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+const statusConfig = {
+  elegivel: { label: 'Elegível', color: 'bg-green-500/10 text-green-600 border-green-500/20', icon: CheckCircle2 },
+  inelegivel: { label: 'Inelegível', color: 'bg-orange-500/10 text-orange-600 border-orange-500/20', icon: XCircle },
+  nao_encontrado: { label: 'Não encontrado', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
+  erro: { label: 'Erro', color: 'bg-destructive/10 text-destructive', icon: AlertCircle },
+};
+
+export default function ConsultaLotePage() {
+  const [cpfs, setCpfs] = useState<string[]>([]);
+  const [fileName, setFileName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resultados, setResultados] = useState<ResultadoLote[]>([]);
+  const [resumo, setResumo] = useState<Resumo | null>(null);
+  const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const parsed = parseCsvCpfs(text);
+      if (parsed.length === 0) {
+        toast({ title: 'Nenhum CPF encontrado', description: 'O arquivo não contém CPFs válidos (11 dígitos).', variant: 'destructive' });
+        return;
+      }
+      if (parsed.length > 500) {
+        toast({ title: 'Limite excedido', description: 'Máximo de 500 CPFs por lote.', variant: 'destructive' });
+        return;
+      }
+      setCpfs(parsed);
+      setFileName(file.name);
+      setResultados([]);
+      setResumo(null);
+      toast({ title: `${parsed.length} CPFs carregados`, description: `Arquivo: ${file.name}` });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }, [toast]);
+
+  const handleConsultar = async () => {
+    if (cpfs.length === 0) return;
+    setLoading(true);
+    setProgress(10);
+    setResultados([]);
+    setResumo(null);
+
+    try {
+      // Split into batches of 50 to avoid timeout
+      const BATCH_SIZE = 50;
+      const allResults: ResultadoLote[] = [];
+
+      for (let i = 0; i < cpfs.length; i += BATCH_SIZE) {
+        const batch = cpfs.slice(i, i + BATCH_SIZE);
+        setProgress(Math.round(((i + batch.length) / cpfs.length) * 90) + 10);
+
+        const { data, error } = await supabase.functions.invoke('consulta-lote', {
+          body: { cpfs: batch }
+        });
+
+        if (error) throw error;
+        if (data.erro) throw new Error(data.mensagem);
+
+        allResults.push(...data.resultados);
+      }
+
+      setResultados(allResults);
+      setResumo({
+        total: allResults.length,
+        elegiveis: allResults.filter(r => r.status === 'elegivel').length,
+        inelegiveis: allResults.filter(r => r.status === 'inelegivel').length,
+        naoEncontrados: allResults.filter(r => r.status === 'nao_encontrado').length,
+        erros: allResults.filter(r => r.status === 'erro').length,
+      });
+      setProgress(100);
+      toast({ title: 'Consulta concluída!', description: `${allResults.length} CPFs processados.` });
+    } catch (err: any) {
+      toast({ title: 'Erro na consulta', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen min-h-[100dvh] bg-background">
+      <Header />
+      <main className="container max-w-4xl mx-auto px-4 py-6 pb-24 space-y-6">
+        {/* Back */}
+        <button onClick={() => navigate('/')} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm">
+          <ArrowLeft size={16} /> Voltar
+        </button>
+
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Consulta em Lote</h1>
+          <p className="text-muted-foreground">Upload de CSV com CPFs para consulta na base offline Facta</p>
+        </div>
+
+        {/* Upload Area */}
+        <Card>
+          <CardContent className="pt-6">
+            <label
+              htmlFor="csv-upload"
+              className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-xl p-8 cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-colors"
+            >
+              <Upload className="h-10 w-10 text-muted-foreground" />
+              <div className="text-center">
+                <p className="font-medium text-foreground">
+                  {fileName || 'Clique para enviar arquivo CSV'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  CSV com uma coluna de CPFs (até 500)
+                </p>
+              </div>
+              {cpfs.length > 0 && (
+                <Badge variant="secondary" className="mt-2">
+                  <FileSpreadsheet size={14} className="mr-1" />
+                  {cpfs.length} CPFs prontos
+                </Badge>
+              )}
+              <input
+                id="csv-upload"
+                type="file"
+                accept=".csv,.txt"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+
+            {cpfs.length > 0 && (
+              <div className="mt-4 flex gap-3">
+                <Button
+                  onClick={handleConsultar}
+                  disabled={loading}
+                  className="flex-1"
+                  size="lg"
+                >
+                  {loading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Consultando...</>
+                  ) : (
+                    <><Search className="mr-2 h-4 w-4" /> Consultar {cpfs.length} CPFs</>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {loading && (
+              <div className="mt-4 space-y-2">
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">{progress}% concluído</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Summary */}
+        {resumo && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-foreground">{resumo.total}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-green-600">{resumo.elegiveis}</p>
+                <p className="text-xs text-muted-foreground">Elegíveis</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-orange-600">{resumo.inelegiveis}</p>
+                <p className="text-xs text-muted-foreground">Inelegíveis</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-muted-foreground">{resumo.naoEncontrados}</p>
+                <p className="text-xs text-muted-foreground">Não encontrados</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-destructive">{resumo.erros}</p>
+                <p className="text-xs text-muted-foreground">Erros</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Export */}
+        {resultados.length > 0 && (
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => exportCsv(resultados)}>
+              <Download className="mr-2 h-4 w-4" /> Exportar CSV
+            </Button>
+          </div>
+        )}
+
+        {/* Results Table */}
+        {resultados.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Resultados</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left p-3 font-medium">CPF</th>
+                      <th className="text-left p-3 font-medium">Status</th>
+                      <th className="text-left p-3 font-medium">Nome</th>
+                      <th className="text-left p-3 font-medium">Empregador</th>
+                      <th className="text-right p-3 font-medium">Margem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultados.map((r, i) => {
+                      const config = statusConfig[r.status];
+                      const Icon = config.icon;
+                      return (
+                        <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="p-3 font-mono text-xs">{formatCpf(r.cpf)}</td>
+                          <td className="p-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${config.color}`}>
+                              <Icon size={12} />
+                              {config.label}
+                            </span>
+                          </td>
+                          <td className="p-3 truncate max-w-[200px]">{r.dados?.nome || '-'}</td>
+                          <td className="p-3 truncate max-w-[200px]">{r.dados?.nomeEmpregador || '-'}</td>
+                          <td className="p-3 text-right font-medium">
+                            {r.dados?.valorMargemDisponivel ? formatCurrency(r.dados.valorMargemDisponivel) : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </main>
+    </div>
+  );
+}
