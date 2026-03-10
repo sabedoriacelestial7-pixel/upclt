@@ -22,11 +22,15 @@ interface ResultadoLote {
     valorLiberado: number;
     valorParcela: number;
     parcelas: number;
+    codigoTabela: number | null;
+    coeficiente: string | null;
+    nomeTabela: string | null;
     nomeEmpregador: string;
     cnpjEmpregador: string;
     dataAdmissao: string;
     dataNascimento: string;
     elegivel: boolean;
+    simulacaoReal: boolean;
   } | null;
 }
 
