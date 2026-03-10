@@ -13,6 +13,7 @@ interface ResultadoLote {
   cpf: string;
   status: 'elegivel' | 'inelegivel' | 'nao_encontrado' | 'erro';
   mensagem: string;
+  telefone?: string;
   dados: {
     nome: string;
     matricula: string;
@@ -113,7 +114,7 @@ function formatCurrency(value: number): string {
 }
 
 function exportCsv(resultados: ResultadoLote[]) {
-  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Parcela Máx', 'Valor Liberado', 'Parcelas', 'Tabela', 'Simulação Real', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
+  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Parcela Máx', 'Valor Liberado', 'Parcelas', 'Tabela', 'Simulação Real', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Telefone', 'Mensagem'];
   const rows = resultados.map(r => [
     formatCpf(r.cpf),
     r.status,
@@ -130,6 +131,7 @@ function exportCsv(resultados: ResultadoLote[]) {
     r.dados?.dataAdmissao || '',
     r.dados?.dataNascimento || '',
     r.dados?.matricula || '',
+    r.telefone || '',
     r.mensagem
   ]);
 
@@ -405,6 +407,7 @@ export default function ConsultaLotePage() {
                       <th className="text-right p-3 font-medium">Margem (Parcela)</th>
                       <th className="text-right p-3 font-medium">Valor Liberado</th>
                       <th className="text-center p-3 font-medium">Parcelas</th>
+                      <th className="text-left p-3 font-medium">Telefone</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -438,6 +441,21 @@ export default function ConsultaLotePage() {
                           </td>
                           <td className="p-3 text-center text-muted-foreground">
                             {r.dados?.parcelas ? `${r.dados.parcelas}x` : '-'}
+                          </td>
+                          <td className="p-3">
+                            <input
+                              type="tel"
+                              className="w-[130px] rounded border border-border bg-background px-2 py-1 text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                              placeholder="(00) 00000-0000"
+                              value={r.telefone || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const originalIdx = resultados.indexOf(r);
+                                setResultados(prev => prev.map((item, idx) =>
+                                  idx === originalIdx ? { ...item, telefone: val } : item
+                                ));
+                              }}
+                            />
                           </td>
                         </tr>
                       );
