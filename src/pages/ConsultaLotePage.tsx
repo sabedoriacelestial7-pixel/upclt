@@ -13,6 +13,7 @@ interface ResultadoLote {
   cpf: string;
   status: 'elegivel' | 'inelegivel' | 'nao_encontrado' | 'erro';
   mensagem: string;
+  telefone?: string;
   dados: {
     nome: string;
     matricula: string;
