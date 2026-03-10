@@ -147,16 +147,22 @@ async function consultarSimulacaoReal(
 
     // Filtrar tabelas COM seguro (prioridade) e pegar o maior prazo disponível
     const tabelas = result.dados;
+    
+    // Log first table to see field names
+    if (tabelas.length > 0) {
+      console.log(`→ Campos da tabela: ${Object.keys(tabelas[0]).join(', ')}`);
+      console.log(`→ Primeira tabela: ${JSON.stringify(tabelas[0])}`);
+    }
 
-    // Priorizar tabelas com seguro
+    // Priorizar tabelas com seguro (valor_seguro > 0 ou nome contém "seguro")
     const tabelasComSeguro = tabelas.filter((t: any) =>
-      t.nome_tabela?.toLowerCase().includes('seguro') ||
-      t.nome_tabela?.toLowerCase().includes('seg')
+      (t.valor_seguro && parseFloat(t.valor_seguro) > 0) ||
+      (t.tabela || t.nome_tabela || '').toLowerCase().includes('seguro')
     );
 
     const tabelasParaUsar = tabelasComSeguro.length > 0 ? tabelasComSeguro : tabelas;
 
-    // Encontrar a tabela com o maior prazo (prioridade: 36 → 24 → 12 → 6)
+    // Encontrar a tabela com o maior prazo
     let melhorTabela: any = null;
     let melhorPrazo = 0;
 
@@ -168,7 +174,6 @@ async function consultarSimulacaoReal(
       }
     }
 
-    // Se não encontrou com prazo alto, tentar fallback pelos prazos prioritários
     if (!melhorTabela) {
       for (const prazoDesejado of PRAZOS_PRIORIDADE) {
         melhorTabela = tabelasParaUsar.find((t: any) => parseInt(t.prazo) === prazoDesejado);
@@ -177,21 +182,23 @@ async function consultarSimulacaoReal(
     }
 
     if (!melhorTabela) {
-      // Usar a primeira tabela disponível
       melhorTabela = tabelasParaUsar[0];
     }
 
-    const valorLiberadoReal = parseFloat(melhorTabela.valor_operacao || melhorTabela.valor_liquido || '0');
-    const valorParcelaReal = parseFloat(melhorTabela.valor_parcela || '0');
+    // Mapear campos (API retorna: valor_liquido, parcela, prazo, coeficiente, codigo_tabela, tabela, valor_seguro, taxa)
+    const valorLiberadoReal = parseFloat(melhorTabela.valor_liquido || melhorTabela.valor_operacao || '0');
+    const valorParcelaReal = parseFloat(melhorTabela.parcela || melhorTabela.valor_parcela || '0');
     const prazoReal = parseInt(melhorTabela.prazo) || 36;
+
+    console.log(`→ Melhor tabela: prazo=${prazoReal}, liberado=${valorLiberadoReal}, parcela=${valorParcelaReal}, tabela=${melhorTabela.tabela || melhorTabela.nome_tabela}`);
 
     return {
       valorLiberado: Math.round(valorLiberadoReal * 100) / 100,
       valorParcela: Math.round(valorParcelaReal * 100) / 100,
       parcelas: prazoReal,
-      codigoTabela: parseInt(melhorTabela.codigo_tabela) || null,
-      coeficiente: melhorTabela.coeficiente || null,
-      nomeTabela: melhorTabela.nome_tabela || null,
+      codigoTabela: parseInt(melhorTabela.codigo_tabela || melhorTabela.codigoTabela) || null,
+      coeficiente: (melhorTabela.coeficiente || '').toString(),
+      nomeTabela: melhorTabela.tabela || melhorTabela.nome_tabela || null,
     };
   } catch (err) {
     console.error(`Erro na simulação real para CPF ${cpf.substring(0, 3)}...:`, err);
