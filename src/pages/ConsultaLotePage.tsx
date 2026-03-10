@@ -19,6 +19,9 @@ interface ResultadoLote {
     valorMargemDisponivel: number;
     valorBaseMargem: number;
     valorTotalVencimentos: number;
+    valorLiberado: number;
+    valorParcela: number;
+    parcelas: number;
     nomeEmpregador: string;
     cnpjEmpregador: string;
     dataAdmissao: string;
