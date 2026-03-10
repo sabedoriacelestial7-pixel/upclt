@@ -113,7 +113,7 @@ function formatCurrency(value: number): string {
 }
 
 function exportCsv(resultados: ResultadoLote[]) {
-  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Margem (Parcela Máx)', 'Valor Liberado (36x)', 'Parcelas', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
+  const headers = ['CPF', 'Status', 'Nome', 'Empregador', 'CNPJ Empregador', 'Parcela Máx', 'Valor Liberado', 'Parcelas', 'Tabela', 'Simulação Real', 'Base Margem', 'Total Vencimentos', 'Data Admissão', 'Data Nascimento', 'Matrícula', 'Mensagem'];
   const rows = resultados.map(r => [
     formatCpf(r.cpf),
     r.status,
@@ -123,8 +123,10 @@ function exportCsv(resultados: ResultadoLote[]) {
     r.dados?.valorParcela?.toFixed(2).replace('.', ',') || '',
     r.dados?.valorLiberado?.toFixed(2).replace('.', ',') || '',
     r.dados?.parcelas?.toString() || '',
-    r.dados?.valorBaseMargem?.toString().replace('.', ',') || '',
-    r.dados?.valorTotalVencimentos?.toString().replace('.', ',') || '',
+    r.dados?.nomeTabela || '',
+    r.dados?.simulacaoReal ? 'Sim' : 'Estimativa',
+    r.dados?.valorBaseMargem?.toFixed(2).replace('.', ',') || '',
+    r.dados?.valorTotalVencimentos?.toFixed(2).replace('.', ',') || '',
     r.dados?.dataAdmissao || '',
     r.dados?.dataNascimento || '',
     r.dados?.matricula || '',
